@@ -6,7 +6,7 @@ WallstreetDB.py: Wallstreet Data Acquisition
 You may use this software freely in your work by clearly and conspicuously acknowledging its author in the copyright of your software with the name of the author as well as this link to the original software on github.
 
 
-##Overview
+## Overview
 
 WallstreetDB.py is a stockmarket project using (mostly) PANDAS that allows its user to create a lightweight yet robust stock exchange database for testing purposes. Think of this as a starter data pack that you will expand on. It (mostly) collects the latest 5-year history of stock exchange data for all stocks listed on the NASDAQ and NYSE. The resulting database can serve as a convenient environment to begin testing algorithms on one's own system without 3rd party signups, no placing proprietary algorithms on vulnerable 3rd party servers, and no incurring unnecessary hassels such as having to keep up with poorly-maintained APIs.
 
@@ -27,22 +27,22 @@ The collection process can either be on a stock by stock basis, or you can itera
 
 	`timeDelayDataPopulate()`
 
-Using a variable to capture the output messages of timeDelayDataPopulate() might be a handy practice too. Note that this call will take several hours to completely download all of the available stock data. The generated database (about 1GB) will have up to 12 tables (listed below). These tables use stock ticker symbols as their primary key.
+Using a variable to capture the output messages of timeDelayDataPopulate() might be a handy practice too. Note that this call will take several hours to completely download all of the available stock data. The generated database (about 1GB) will have up to 12 tables, all of which use stock ticker symbols as their primary key.
     
-(Database Table – Fields)
+**(Database Table – Fields)**
 
-1. Symbols - the stock symbol and the exchange it is traded on
-2. Ten_Yr_Prices - each stock symbol paired with its most recent 10Y price history
-3. Ten_K_Income - stock symbol and its most recent 5Y 10k income report
-4. Ten_K_Balance - stock symbol and its most recent 5Y 10k balance sheet report
-5. Ten_K_Cashflow - stock symbol and its most recent 5Y 10k cashflow report
-6. Ten_Q_Income- stock symbol and its most recent 12M 10Q income report
-7. Ten_Q_Balance - stock symbol and its most recent 12M 10Q balance sheet report
-8. Ten_Q_Cashflow - stock symbol and its most recent 12M 10Q cashflow report
-9. Dividends - stock symbol and all available dividend payment history–inlcuding any upcoming payments–filtered to include only cash dividends
-10. financial_ratios - stock symbol and key financial ratios associated with its performance
-11. finhealth_ratios – stock symbol and key financial health ratios 
-12. growth_ratios - stock symbol and key growth ratios
+1. **Symbols** - the stock symbol and the exchange it is traded on
+2. **Ten_Yr_Prices** - each stock symbol paired with its most recent 10Y price history
+3. **Ten_K_Income** - stock symbol and its most recent 5Y 10k income report
+4. **Ten_K_Balance** - stock symbol and its most recent 5Y 10k balance sheet report
+5. **Ten_K_Cashflow** - stock symbol and its most recent 5Y 10k cashflow report
+6. **Ten_Q_Income** - stock symbol and its most recent 12M 10Q income report
+7. **Ten_Q_Balance** - stock symbol and its most recent 12M 10Q balance sheet report
+8. **Ten_Q_Cashflow** - stock symbol and its most recent 12M 10Q cashflow report
+9. **Dividends** - stock symbol and all available dividend payment history–inlcuding any upcoming payments–filtered to include only cash dividends
+10. **financial_ratios** - stock symbol and key financial ratios associated with its performance
+11. **finhealth_ratios** – stock symbol and key financial health ratios 
+12. **growth_ratios** - stock symbol and key growth ratios
 
 Three caveats to consider when using this module:
     
@@ -54,41 +54,66 @@ Three caveats to consider when using this module:
 
 
 
-##Function List: Name() - Description
+## Function List: Name() - Description
 
 `setDBPath(db_path)` - set your DB file path..not currently implemented.
+
 `makeStockListURL(exchange)` - create the url to acquire the csv file containing all stocks
+
 `getAllCurStocks(exchanges)` - download the csv of all stocks into a pandas dataframe
+
 `createSymbolsKeyTable(symbols)` - create the Symbol table 
+
 `symbolTableExists()` - check to see if the table, Symbol, exists
+
 `dropAllTables()` - helper function to clear the db if you want to make a clean copy
+
 `closeDBConnection()` - call this function when finished acquiring data...automatically invoked if you're using the helper method timeDelayDataPopulate()
 
 `get10YrPriceHistory(symbol)` - get the price history for any given stock symbol
+
 `createPriceHistoryReport(symbol)` - caller function for get10YrPriceHistory(). Cleans the price history.
+
 `commitPriceHistory(data)` - send the price history to the DB
+
 `priceHistoryExists(symbol)` - check the DB to see if the given stock's price history table is present in the DB
+
 `updateStockPrices(symbol)` - daily update function to collect the most recent prices (beginning, ending, daily high and low)
 
 `get10KQReport(symbol, report_type, freq)` - get the 10K or 10Q reports for any given stock and for the specified frequency (e.g., 5yr, 5mon)
+
 `create10KIncomeReport(symbol)` - clean and package the 10K income report for the given symbol into a pandas dataframe
+
 `create10KBalanceReport(symbol)` – clean and package the 10K balance sheet report for the given symbol into a pandas dataframe
+
 `create10KCashflowReport(symbol)` – clean and package the 10K cashflow report for the given symbol into a pandas dataframe
+
 `create10QIncomeReport(symbol)` – clean and package the 10Q income report for the given symbol into a pandas dataframe
+
 `create10QBalanceReport(symbol)` – clean and package the 10Q balance sheet report for the given symbol into a pandas dataframe
+
 `create10QCashflowReport(symbol)` – clean and package the 10Q cashflow report for the given symbol into a pandas dataframe
 
 `dividendHistoryExists(symbol)` - check if the dividend table exists in the database, and whether the given symbol's dividend history has already been downloaded 
+
 `getDividendHistory(symbol, period)` - acquire the dividend history for the given symbol and for the period specified
+
 `formatRawDivTable(soup, which)` - clean the raw dividend history and package it with a pandas dataframe
+
 `commitDividendHistory(data)` - save the dividend history to the database
 
 `financialHistoryExists(symbol, report_type, report_period)` - check to see if the table with the financial history for the given stock is already present in the DB
+
 `createStockFinancialsReports(symbol)` - 
+
 `checkStockFinancialsExist(symbol)` - 
+
 `getStockFinancials(symbol)` - 
+
 `commitFinancialsData(report, report_type, report_period)` - send the acquired financial data to the database
-`commitStockFinancials(financial_reports)`
+
+`commitStockFinancials(financial_reports)` –
 
 `populateAllFinancialReportsForStock(symbol)` - package handler call that takes the given symbol and fires off all previous function calls pertaining to data acquisition
+
 `timeDelayDataPopulate()` - timer implementation to handle iterative http requests to servers for data

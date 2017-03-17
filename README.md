@@ -25,7 +25,7 @@ The workflow in this module is as follows:
 
 The collection process can either be on a stock by stock basis, or you can iterate over all of the stock symbols in your DB. A list of all available functions is provided below. The preferred procedure would likely be to iterate with a timer that spaces out http calls to servers so you *don't slam those servers with requests and get blacklisted*. A convenient function is provided for this task and has been successfully tested. The timer-implemented function call is
 
-	`timeDelayDataPopulate()`
+	timeDelayDataPopulate()
 
 Using a variable to capture the output messages of timeDelayDataPopulate() might be a handy practice too. Note that this call will take several hours to completely download all of the available stock data. The generated database (about 1GB) will have up to 12 tables, all of which use stock ticker symbols as their primary key.
     

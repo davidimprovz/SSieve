@@ -13,7 +13,7 @@ WallstreetDB.py is a stockmarket project using (mostly) PANDAS that allows its u
 The workflow in this module is as follows:
 
 1. Initialize your project with a database path.
-2. Retreive a list of all NYSE- and NASDAQ-listed stocks form the NASDAQ's comprehensive list. This list includes symbols, most recent price, company name, etc
+2. Retreive a list of all NYSE- and NASDAQ-listed stocks form the NASDAQ's comprehensive list. This list includes symbols, most recent price, company name, etc.
 3. Clean and commit the acquired data to an SQLite3 database, which you name when you initialize in step 1.
 4. Collect desired stock and market data to include: 
     * 10K reports: Income, Balance, Cashflow
@@ -21,7 +21,6 @@ The workflow in this module is as follows:
     * (up to) 10Y Stock Price History
     * Dividend payments, if applicable
     * Key ratios and miscellaneous financial details for each stock.
-    * The S&P 500's long-term allocation positions. 
 
 The collection process can either be on a stock by stock basis, or you can iterate over all of the stock symbols in your DB. A list of all available functions is provided below. The preferred procedure would likely be to iterate with a timer that spaces out http calls to servers so you *don't slam those servers with requests and get blacklisted*. A convenient function is provided for this task and has been successfully tested. The timer-implemented function call is
 

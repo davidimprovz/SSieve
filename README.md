@@ -2,13 +2,15 @@
 Python tools for gathering, analyzing, and visualizing information on equity markets and individual equities.
 
 WallstreetDB.py: Wallstreet Data Acquisition
-©2017 David Williams. Creative Commons License applies. 
+©2017 David Williams. Creative Commons License applies.
 You may use this software freely in your work by clearly and conspicuously acknowledging its author in the copyright of your software with the name of the author as well as this link to the original software on github.
 
 
 ## Overview
 
-WallstreetDB.py is a stockmarket project using (mostly) PANDAS that allows its user to create a lightweight yet robust stock exchange database for testing purposes. Think of this as a starter data pack that you will expand on. It (mostly) collects the latest 5-year history of stock exchange data for all stocks listed on the NASDAQ and NYSE. The resulting database can serve as a convenient environment to begin testing algorithms on one's own system without 3rd party signups, no placing proprietary algorithms on vulnerable 3rd party servers, and no incurring unnecessary hassels such as having to keep up with poorly-maintained APIs.
+WallstreetDB.py is a stockmarket data project using (mostly) PANDAS that allows its user to create a lightweight and robust stock exchange DB. Think of this as a starter pack that you can expand on. It (mostly) collects the latest 5-year history of stock exchange data for all stocks listed on the NASDAQ and NYSE. (Check the source code for data sources, of which there could be several, depending on your preference.)
+
+The resulting database serves as a convenient reference for testing algorithms on one's own system without the hassle or vulnerability of 3rd party signups and poorly-maintained APIs.
 
 The workflow in this module is as follows:
 
@@ -22,9 +24,11 @@ The workflow in this module is as follows:
     * Dividend payments, if applicable
     * Key ratios and miscellaneous financial details for each stock.
 
-The collection process can either be on a stock by stock basis, or you can iterate over all of the stock symbols in your DB. A list of all available functions is provided below. The preferred procedure would likely be to iterate with a timer that spaces out http calls to servers so you *don't slam those servers with requests and get blacklisted*. A convenient function is provided for this task and has been successfully tested. The timer-implemented function call is `timeDelayDataPopulate()`.
+The collection process can be on a stock by stock basis or you can iterate over all of the stock symbols in your DB. 
 
-Using a variable to capture the output messages of `timeDelayDataPopulate()` might be a handy practice too. Note that this call will take several hours to completely download all of the available stock data due to the timer. The generated database (about 1GB) will have up to 12 tables, all of which use stock ticker symbols as their primary key.
+A list of all available functions is provided. The simple procedure is to iterate with a timer that spaces out http calls to servers so you *don't slam those servers with requests and get blacklisted*. A convenient function `timeDelayDataPopulate()` is provided for this task and has been successfully tested. Use a variable to capture the success / failure messages of `timeDelayDataPopulate()`. 
+
+Note that due to the timer, this call can take several hours to completely download all available stock data. The generated database (about 1GB) will have up to 12 tables, all of which use stock ticker symbols as their primary key.
     
 **(Database Table – Fields)**
 
@@ -43,11 +47,11 @@ Using a variable to capture the output messages of `timeDelayDataPopulate()` mig
 
 Three caveats to for using this module:
     
-1. Because this software relies on public-facing web data, it has to use http requests from urls that could change and from CSS / HTML structures that could change. The user will probably want to write a simple test to make sure that the urls are active before each use. If any of the url, html structure, or css selectors have changed, just update those in the functions and variables listed below.
+1. Because this software relies on public-facing web data, it has to use http requests from urls (hence CSS / HTML structures) that could change. You will probably want to write a simple test to make sure that the urls are active before each use. If any of the urls, html / css structures have changed, just update those variables that hold the string vals.
 
-2. The end result of running this software is a fairly clean database of all stocks publicly traded on NASDAQ and NYSE. You will want to inspect the stock symbols and 10K/Q reports for issues. In writing this code, the author has found issues with special characters introduced into symbols coming from the NASDAQ exchange; these specials will at times cause confusing errors which are hard to detect without visual inspection. One of the more common issues has been unicode errors. Also, if you try to query your DB for a stock 10K/Q report that should be there and find nothing, you may need to make some corrections to the code for unforseen issues.
+2. The end result of running this software is a (mostly) clean database of all stocks publicly traded on NASDAQ and NYSE. However, the stock market is a dynamic thing. In writing this code, the author has found issues with special characters introduced into symbols coming from the NASDAQ exchange; these special chars will at times cause confusing errors which are hard to detect without visual inspection. One of the more common issues has been unicode errors. Also, if you try to query your DB for a stock 10K/Q report that should be there and find nothing, you may need to make some corrections to the code for unforseen issues.
 
-3. The user accepts all responsiblity and liability for use of this software. This software is not intended for use in a production environment and has not been fully tested. No warranty is offered or implied by the author. Use at your own risk. The author recommends you treat other companies' servers with respect when programatically making http requests. That means you should probably implement the timer for iteratively retreiving data on the 5000+ stocks traded on the US's major exchanges. It is not recommended that you hammer servers with requests. *Doing so may get your IP address blacklisted and blocked*.
+3. The user accepts all responsiblity and liability for use of this software, which is not intended for use in a production environment and has not been fully tested. No warranty is offered or implied by the author. Use at your own risk. Also, treat other companies' servers with respect when programatically making http requests. That means you should probably implement the timer for iteratively retreiving data on the 5000+ stocks traded on the US's major exchanges. *Hammering servers with requests may get your IP address blacklisted and blocked*.
 
 
 ## Function List: Name() - Description

@@ -1,0 +1,64 @@
+# Compiled source #
+###################
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+*.pyc
+*.html
+
+# Packages #
+############
+# it's better to unpack these files and commit the raw source
+# git has its own built in compression methods
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# Logs and databases #
+######################
+*.log
+*.sql
+*.sqlite
+*.csv
+*.db
+
+
+# OS generated files #
+######################
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IPython Notebooks #
+#####################
+*.ipynb
+
+# FOLDERS & FILES #
+###################
+/scraping/nightmare
+/scraping/output
+/scraping/DB
+/scraping/.ipynb_checkpoints
+/scraping/stockscrape/stock_trials
+/scraping/stockscrape/App*
+/scraping/stockscrape/Data\ Acquisition\ Steps
+*scrapy
+
+/analyzing/Function\ Map\ for\ DCF
+/analyzing/analysis_logic_ideas
+/analyzing/Versions
+
+/eperiments
+

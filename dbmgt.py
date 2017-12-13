@@ -40,6 +40,7 @@ class stockDB():
 		self._dbcnx = connection
 	
 	# connectToDB
+    # *********** #
 	def connectToDB(self, connection='~/AUTOSIFT/ez_equity_daemon/scraping/second_xchanges_trial.db'): 
 		"""
 		Connect to the desired DB. Note that this file must exist. If no DB specified,
@@ -83,6 +84,7 @@ class stockDB():
 			return (False, e)
 
 	# closeDBConnection()
+    # ******************* #
 	def closeDBConnection(self, connection):
 		"""
 		Pass in reference to self.dbcnx[0].
@@ -97,13 +99,14 @@ class stockDB():
 		"""
 		try:
 			connection.commit()
-			connection.close() # turn into DB function that opens and shots DB connection as needed.
+			connection.close()
 			return 'DB connection successfully closed.'
 
 		except Exception as e:
 			return (False, e)
 
 	# dropAllTables()
+    # *************** #
 	def dropAllTables(self):
 		"""
 		Danger! This function drops all tables in your currently active DB.
@@ -130,6 +133,7 @@ class stockDB():
 			return False, e
 
 	# checkAndAddDBColumns()
+    # ********************** #
 	def checkAndAddDBColumns(self, df_columns, table):
 	    """
 	    Trying to write an earlier date col to an existing table will result in an err.
@@ -146,7 +150,7 @@ class stockDB():
 	    """
 	    try:
 	        # get a list of all columns in the db
-	        existing = self.dbcnx[1].execute("SELECT * FROM {tbl};".format(tbl=table)) # need to update dbcnx from time to time with a commit
+	        existing = self.dbcnx[1].execute("SELECT * FROM {tbl};".format(tbl=table))
 	        existing = [member[0] for member in existing.description]
 	        
 	        # compare names of columns to df_columns 
@@ -161,9 +165,8 @@ class stockDB():
 	    except Exception as e:
 	        return False, e
 
-	## UNFINISHED
-
 	# testDbTables()
+    # ************** #
 	def testDBTables(self, cursor):
 		"""
 		Check the DB to see which tables are there. 
@@ -176,5 +179,5 @@ class stockDB():
 		Example usage: 
 		"""
 	    # test to make sure all tables were created
-		all_db_tables = cursor.execute('SELECT name FROM sqlite_master WHERE type="table" ORDER BY name;').fetchall() # 'SELECT * FROM all_stocks_key')
+		all_db_tables = cursor.execute('SELECT name FROM sqlite_master WHERE type="table" ORDER BY name;').fetchall()
 		return (len(all_db_tables), all_db_tables)

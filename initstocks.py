@@ -38,25 +38,21 @@ def initializeStockDB(db_name):
 		# instantiate coreStocks() class and connect to DB
 		all_stocks = core.coreStocks(full_db_path)
 		all_stocks.connectToDB(all_stocks.dbcnx)
-
-		# to do: pepper in some asserts 
-
-		# # download a current list of all stocks
+ 
+		# download a current list of all stocks
 		stock_list = all_stocks.getAllCurStocks(exchanges)
 		stock_list = stock_list[['Symbol', 'Market']]
 
-		# # create the key table
+		# create the key table
 		all_stocks.createSymbolsKeyTable(stock_list)
 
-		# pepper in some asserts 
+		# populate all of the stocks
+		results = all_stocks.timeDelayDataPopulate(stock_list.iloc[1345:1450])
 
-		# # populate all of the stocks 
-		results = all_stocks.timeDelayDataPopulate(stock_list.iloc[1345:1450]) # .iloc[1345:1450] remove iloc to do all stocks
-
-		# # log the results as a file
+		# log the results as a file
 		log = ''.join([cwd, '/output/initialize/init_results_', datetime.date.today().strftime("%B_%d_%Y"), '.txt'])
 		
-		# convert to a function. Set up a counter in timeDelayPop to offload results every 100th stock or so.
+        # log results
 		with open(log, 'w') as f:
 			for msgs in results:
 				if isinstance(msgs, str):

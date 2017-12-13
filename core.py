@@ -25,6 +25,8 @@ from dbmgt import stockDB
 
 class coreStocks(stockDB, accessStrings):
     """
+    See readme file for more details on this class.
+    
     Per stockDB's __init__ method, 
     you must pass in a db connection when instantiating this method.
 
@@ -70,13 +72,13 @@ class coreStocks(stockDB, accessStrings):
         """
         Helper function to discard columns in sheets where each value in column is null.
 
-        Accepts a pd.DataFrame as the sheet argument.
+        Accepts a DataFrame as the sheet argument.
 
         Returns the cleaned dataframe or an error Tuple of (False, error)
         """
         try:# check for and remove columns with all NaNs
             for column in sheet.columns: 
-                if pd.isnull(sheet[column]).all(): # might switch to ~np.isnan()
+                if pd.isnull(sheet[column]).all():
                     sheet.drop(column, axis=1, inplace=True)
             return sheet
         
@@ -88,7 +90,7 @@ class coreStocks(stockDB, accessStrings):
         """
         Format a column name to remove spaces.
 
-        Takes pandas dataframe as argument. 
+        Takes dataframe as argument.
 
         Returns pandas dataframe with edited column names (where applicable)
         """
@@ -131,10 +133,10 @@ class coreStocks(stockDB, accessStrings):
                 wait_time = np.random.randint(4,10)
                 time.sleep(wait_time)
                 print('Gathering data on {sym} - '.format(sym = stock[1][0]) + datetime.datetime.now().strftime("%I:%M:%S") + '\n') # print a helper message to console to show progress
-                results.append(self.populateAllFinancialReportsForStock(stock[1])) # iterating over rows in series..must select second elem in tuple 
+                results.append(self.populateAllFinancialReportsForStock(stock[1])) # iterating over rows in series...must select second elem in tuple
             
             # acquire the snp allocation for the entire market
-            results.append( self.commitSandP(self.getSandPAllocation(), True) ) # fix so that it can be updated on each call
+            results.append( self.commitSandP(self.getSandPAllocation(), True) )
             # set end time for diagnostics
             results.append( 'End time: ' + datetime.datetime.now().strftime("%Y:%B:%d:%I:%M:%S") )
 
@@ -175,13 +177,13 @@ class coreStocks(stockDB, accessStrings):
             # get 10yr price history and append result to success_msgs
             success_msgs.append( self.commitPriceHistory( self.createPriceHistoryReport(stock) ) )
             # get all 10Ks and append result to success_msgs
-            success_msgs.append( self.commitFinancialsData( self.create10KIncomeReport(stock), 'is', 12) ) # fail on SLB
+            success_msgs.append( self.commitFinancialsData( self.create10KIncomeReport(stock), 'is', 12) )
             success_msgs.append( self.commitFinancialsData( self.create10KBalanceReport(stock), 'bs', 12) )
             success_msgs.append( self.commitFinancialsData( self.create10KCashflowReport(stock), 'cf', 12) )
             # get all 10Qs and append result to success_msgs
-            success_msgs.append( self.commitFinancialsData( self.create10QIncomeReport(stock), 'is', 3) ) # err on GOOG
+            success_msgs.append( self.commitFinancialsData( self.create10QIncomeReport(stock), 'is', 3) )
             success_msgs.append( self.commitFinancialsData( self.create10QBalanceReport(stock), 'bs', 3) )
-            success_msgs.append( self.commitFinancialsData( self.create10QCashflowReport(stock), 'cf', 3) ) # err on GOOG
+            success_msgs.append( self.commitFinancialsData( self.create10QCashflowReport(stock), 'cf', 3) )
             # get the dividend records, if any, and append result to success_msgs
             success_msgs.append( self.commitDividendHistory( self.getDividendHistory(stock, '20')) )
             # get the financials records and append result to success_msgs
@@ -210,7 +212,7 @@ class coreStocks(stockDB, accessStrings):
             the_exchange = self.all_cur_stocks_csv_exchange[0]    
             if exchange.lower() == 'nyse': 
                 the_exchange = self.all_cur_stocks_csv_exchange[1]
-            return self.all_cur_stocks_csv_base_url + the_exchange + self.all_cur_stocks_csv_tail # rewrite with .join([])
+            return ''.join([self.all_cur_stocks_csv_base_url, the_exchange, self.all_cur_stocks_csv_tail])
 
         except Exception as e:
             return False, e
@@ -239,7 +241,7 @@ class coreStocks(stockDB, accessStrings):
         """
         try:
             #download all the stocks from NASDAQ and NYSE
-            stock_lists_to_download = [self.makeStockListURL(exchanges[0]), self.makeStockListURL(exchanges[1])] # evntually a comprehension for exchanges inside this comprehension
+            stock_lists_to_download = [self.makeStockListURL(exchanges[0]), self.makeStockListURL(exchanges[1])]
             exchange_data = [pd.read_csv(i, index_col = 0, encoding='utf-8') for i in stock_lists_to_download]
             #make column in each frame for Exchange and assign the market that the stock belongs to
             for idx, i in enumerate(exchange_data): 
@@ -248,17 +250,12 @@ class coreStocks(stockDB, accessStrings):
             all_exchanges = pd.concat([exchange_data[0], exchange_data[1]])
             # drop the Unnamed and Summary Quote columns
             all_exchanges.drop(['Unnamed: 8', 'Summary Quote'], axis=1, inplace=True)
-            #drop all n/a(s) in the LastSale column b/c I don't care about stock that's not selling. Research more ltr.
+            #drop all n/a(s) in the LastSale column b/c I don't care about stock that's not selling.
             all_exchanges = all_exchanges[ (all_exchanges.loc[:,'LastSale'] != 'n/a') & (all_exchanges.loc[:, 'LastSale'] != None) ]
             # cast all numeric values in LastSale as float instead of string
             all_exchanges.loc[:, 'LastSale'] = all_exchanges.loc[:,'LastSale'].astype(float)
-            #add column for marketcap symbol and remove all symbols and numbers from marketcap that to get the multiplier 
-        
-            # new as of 30 Jan
+            #add column for marketcap symbol and remove all symbols and numbers from marketcap that to get the multiplier
             all_exchanges['MarketCapSym'] =  all_exchanges['MarketCap'].replace('[$0-9.]', '', regex=True)
-            
-            # add column for dividend paying stock categorization
-            
             #remove $ and letters from MarketCap fields
             all_exchanges['MarketCap'] = all_exchanges['MarketCap'].replace('[$MB]', '', regex=True)
             all_exchanges.reset_index(inplace=True)
@@ -266,10 +263,9 @@ class coreStocks(stockDB, accessStrings):
             all_exchanges['Symbol'] = all_exchanges['Symbol'].replace('\s+', '', regex=True)
             #replace all n/a values in MarketCap with np.NAN
             all_exchanges[all_exchanges['MarketCap'] == 'n/a'] = np.NAN
-            #convert MarketCap to a float. Find out if chaining this way is bad.
+            #convert MarketCap to a float.
             all_exchanges['MarketCap'] = all_exchanges['MarketCap'].astype(float)
-            # round the LastSale column
-            # all_exchanges.MarketCap = all_exchanges.MarketCap.round(2)
+            #round the LastSale column
             all_exchanges['LastSale'] = all_exchanges['LastSale'].round(2)
             #rename industry column
             all_exchanges.rename(columns={'industry':'Industry'}, inplace=True)
@@ -302,8 +298,6 @@ class coreStocks(stockDB, accessStrings):
             # get the raw data from morningstar    
             price_history = self.get10YrPriceHistory(stock)
             
-            # add Symbol column for tracking and adding to DB
-            
             if isinstance(price_history, pd.DataFrame): # the price_history has to exist, or else return the err msg of the function called
                 
                 price_history['Symbol'] = stock[0]
@@ -313,10 +307,8 @@ class coreStocks(stockDB, accessStrings):
                 price_history.rename(columns={'Date':'Reference'}, inplace=True)
                 # convert all dates to ISO formatted yyyy-mm-dd strings
                 price_history['Reference'] = price_history['Reference'].apply(lambda x: time.strftime("%Y-%m-%d", time.strptime(x, "%m/%d/%Y")))
+                
                 # convert volumes to integers # unicode err on ??? value for some volumes goes to NaN
-
-                    # todo: filter by dates supplied in second argument
-                    # search docs for how to filter by a period.
 
                 price_history['Volume'] = pd.to_numeric(price_history['Volume'].str.replace(',',''), errors='coerce')
                 # set index b/f db commit so no duplicate numeric index columns
@@ -351,12 +343,12 @@ class coreStocks(stockDB, accessStrings):
             price_history_path = (self.stock_price_mngstar_csv_base_url + 
                                     exchange + symbol[0] +
                                     self.stock_price_mngstar_csv_period[0] +
-                                    self.stock_price_mngstar_csv_freq_str + # choose a different frequency for stocks that are new
+                                    self.stock_price_mngstar_csv_freq_str +
                                     self.stock_price_mngstar_csv_freq_period[0] + 
                                     self.stock_price_mngstar_csv_tail)
 
             # throws EmptyDataError('No columns to parse from file') if nothing returned
-            price_history = pd.read_csv(price_history_path, header=1, encoding = 'utf8') # header is on second row. remove first.
+            price_history = pd.read_csv(price_history_path, header=1, encoding = 'utf8') # header is on second row
             
             if not isinstance(price_history, pd.DataFrame):
                 raise ValueError('Price history report failed. No dataframe returned. Got %r.' % price_history )
@@ -364,12 +356,11 @@ class coreStocks(stockDB, accessStrings):
             return price_history
         
         except Exception as e: 
-            # i can use these companies as a barometer for industries that are undervalued and target them for purchase!
+            
             return False, e, 'There is no price history for {stock}. The stock may no longer be traded, or it is so new that there is no price report available for 10yr period.'.format(stock=symbol[0])
 
     # getDividendHistory
     # ****************** #
-    # need to correct for network faults and no dividend when a Dividend report not a dataframe: returned <class 'str'> is returned. Make cyclic until report is successful. 
     def getDividendHistory(self, symbol, period):
         """
         Downloads and formats an HTML dividend table packaged as a PANDAS dataframe. 
@@ -407,7 +398,7 @@ class coreStocks(stockDB, accessStrings):
             div_history_path = ''.join([self.stock_div_table_mngstar_head, self.stock_div_table_mngstar_type[1], self.stock_div_table_mngstar_action, exchange, symbol[0], self.stock_div_table_mngstar_region, self.stock_div_table_mngstar_tail, years]) 
             
             # get the data
-            upcoming_raw_html = requests.get(upcoming_div_history_path).text # upcoming will eventually be its own function.
+            upcoming_raw_html = requests.get(upcoming_div_history_path).text
             past_raw_html = requests.get(div_history_path).text 
             
             # process the upcomming dividend table if there's any
@@ -429,18 +420,13 @@ class coreStocks(stockDB, accessStrings):
                 upcoming_div_table = upcoming_div_table[0]    
           
             # pass the soup objects to pandas, using str as a backup measure to make sure to convert data to parsable format
-            past_div_table = pd.read_html(str(past_formatted_table), header=0, parse_dates=True, encoding='utf-8')[0] # since read_html returns a list, have to get the first element
+            past_div_table = pd.read_html(str(past_formatted_table), header=0, parse_dates=True, encoding='utf-8')[0] # since read_html returns a list, get the first element
             
             # merge the tables
             if has_upcoming == True:
                 div_table = past_div_table.append(upcoming_div_table, ignore_index = True)
             else:
                 div_table = past_div_table.copy()
-            # get a view of the div df where there are ONLY cash dividends
-            # div_table = div_table[div_table['Dividend Type'] == 'Cash Dividends'].copy()
-            # do special cash divs matter? 
-                # yes...can filter them out later in analysis
-                # for now, want all dividends
 
             # set a symbol column
             div_table['Symbol'] = symbol[0]
@@ -451,11 +437,11 @@ class coreStocks(stockDB, accessStrings):
             # check for stock splits or any numbers that don't fit the float format
             
             # account for payment in different currency adding a currrency column
-            div_table['Currency'] = div_table['Amount'].str.extract('([A-Z]*)', expand=False) # consider adding the dollar sign extracted in the next few lines
+            div_table['Currency'] = div_table['Amount'].str.extract('([A-Z]*)', expand=False)
             # remove any remaining whitespace
             div_table['Amount'] = div_table['Amount'].replace('(/\s/g)?([A-Z]?)','',regex=True)
             # clean up Amount column by removing $ sign and converting number to float
-            div_table['Amount'] = div_table['Amount'].replace('\$', '', regex=True) # .astype(np.float64, errors='ignore') # don't need to convert when inserting into DB...but does making a string increase size?
+            div_table['Amount'] = div_table['Amount'].replace('\$', '', regex=True)
             # replace spaces with underscores for sqlite3 compatability
             div_table = self.removeColumnSpaces(div_table)
 
@@ -502,7 +488,7 @@ class coreStocks(stockDB, accessStrings):
                 
                 # different binning for stocks paid semi-annually, annually, and quarterly            
                 data_row = [] # container 
-                for idx, item in enumerate(contents): # get the row we need
+                for idx, item in enumerate(contents): # get the needed row
                     if idx == 3: 
                         data_row = str(item)
                         pass # end the loop
@@ -551,7 +537,6 @@ class coreStocks(stockDB, accessStrings):
         try:
             exchange = self.stock_financials_mngstar_exchange[0] if symbol[1] == 'NASDAQ' else self.stock_financials_mngstar_exchange[1]
             
-            # fix so that globals aren't rewritten
             stock_financials_path = self.stock_financials_mngstar_head + exchange + symbol[0] + self.stock_financials_mngstar_tail
             raw_financials = pd.read_csv(stock_financials_path, header=2, encoding='utf-8')
             
@@ -560,7 +545,7 @@ class coreStocks(stockDB, accessStrings):
         except Exception as e:
             empty_msg = 'No available financial information for {equity}.'.format(equity=symbol[0]) 
             
-            if isinstance(e, pd.io.common.CParserError): # use in other scrape functions for checking.
+            if isinstance(e, pd.io.common.CParserError):
                 return empty_msg
             elif isinstance(e, pd.io.common.EmptyDataError):
                 return empty_msg
@@ -585,10 +570,7 @@ class coreStocks(stockDB, accessStrings):
         Example Usage: createStockFinancialsReports(('DUK', 'NYSE'))
         '''
         try:
-            
-            # if daily is True:
-            #     pass
-
+        
             if self.checkStockFinancialsExist(symbol[0])[0] == False: # func call indexed b/c it returns a tuple
                 # get the raw data and return an err msg if no data available
                 financials = self.getStockFinancials(symbol)
@@ -599,8 +581,7 @@ class coreStocks(stockDB, accessStrings):
                 financials['Symbol'] = symbol[0]
 
                 # rename one column for clarity
-                financials.rename(columns={'Unnamed: 0': 'Measure'}, inplace=True) ## Need to replace this col w/ unique time-stampped name?
-                # create index key for column names
+                financials.rename(columns={'Unnamed: 0': 'Measure'}, inplace=True)
 
                 # realign the columns to put the Symbol first
                 financials = self.alignReportColumns(financials)
@@ -641,15 +622,14 @@ class coreStocks(stockDB, accessStrings):
                 finhealth_ratios = financials.ix[finhealth_index1: finhealth_index2].copy()
                 # remove first two unneeded rows
                 finhealth_ratios = finhealth_ratios.iloc[2:]
-                # adjust the column name
 
-                #! MUST EDIT THESE COLUMN NAMES SO THAT NEW INSERTIONS CAN BE MADE !#
                 finhealth_ratios.rename(columns={'TTM': 'Latest Qtr'}, inplace=True)
                 # set the index to the symbol for easy DB insertion
                 finhealth_ratios.set_index('Symbol', inplace=True)      
                 
                 # drop the financial health ratios from the financial frame
-                financials.drop(financials.index[finhealth_index1-5: finhealth_index2-4], inplace=True) # this index hack will have to improve eventually
+                financials.drop(financials.index[finhealth_index1-5: finhealth_index2-4], inplace=True)
+                
                 # drop the growth ratios from the financials frame
                 financials.drop(financials.index[growth_index1-3 : growth_index2-2], inplace=True)
                 # reset the index on the financials frame
@@ -731,8 +711,6 @@ class coreStocks(stockDB, accessStrings):
             sheet = self.cleanNullColumns(sheet)
             # add symbol column
             sheet['Symbol'] = symbol[0]
-            
-            # to do: preserve currency denomination and fiscal year end
 
             # replace 1st column containing "Fiscal year ends".
             col = sheet.columns[0]
@@ -745,7 +723,7 @@ class coreStocks(stockDB, accessStrings):
             else: #report is 'cf'
                 sheet.rename(columns={col:'Cashflow item'}, inplace=True)
 
-            # remove spaces in all columns so sqlite3 commit doesn't issue warning. # shift the columns 
+            # remove spaces in all columns so sqlite3 commit doesn't issue warning.
             sheet = self.alignReportColumns(self.removeColumnSpaces(sheet))
             # set symbol as index for storage
             sheet.set_index(['Symbol'], inplace=True)
@@ -772,7 +750,7 @@ class coreStocks(stockDB, accessStrings):
         Example Usage: create10KIncomeReport(('ULTI', 'NASDAQ'))
         """
         try:
-            ten_k_income = self.get10KQReport(symbol, 'is', 12) # note: a slow connection prevents download...will need to test completion
+            ten_k_income = self.get10KQReport(symbol, 'is', 12) # note: a slow connection prevents download
             
             if isinstance(ten_k_income, pd.DataFrame): # if no error downloading info for a new stock or simply initializing the db            
                 ten_k_income = self.format10KQSheet(ten_k_income, symbol, 'is')
@@ -800,7 +778,7 @@ class coreStocks(stockDB, accessStrings):
         """
 
         try:
-            ten_k_balance = self.get10KQReport(symbol, 'bs', 12) # note: a slow connection prevents download...will need to test completion
+            ten_k_balance = self.get10KQReport(symbol, 'bs', 12) # note: a slow connection prevents download
             
             if isinstance(ten_k_balance, pd.DataFrame): # if no error downloading info for a new stock or simply initializing the db            
                 ten_k_balance = self.format10KQSheet(ten_k_balance, symbol, 'bs')
@@ -828,7 +806,7 @@ class coreStocks(stockDB, accessStrings):
         """
 
         try:
-            ten_k_cashflow = self.get10KQReport(symbol, 'cf', 12) # note: a slow connection prevents download...will need to test completion
+            ten_k_cashflow = self.get10KQReport(symbol, 'cf', 12) # note: a slow connection prevents download
             
             if isinstance(ten_k_cashflow, pd.DataFrame): # no error downloading info for a new stock or simply initializing the db
                  ten_k_cashflow = self.format10KQSheet(ten_k_cashflow, symbol, 'cf')
@@ -858,7 +836,7 @@ class coreStocks(stockDB, accessStrings):
         try:
             ten_q_income = self.get10KQReport(symbol, 'is', 3)
             
-            if isinstance(ten_q_income, pd.DataFrame): # no error downloading info for a new stock or simply initializing the db
+            if isinstance(ten_q_income, pd.DataFrame): # if error downloading info for a new stock or simply initializing the db
                 ten_q_income = self.format10KQSheet(ten_q_income, symbol, 'is')
                 
             return ten_q_income
@@ -886,7 +864,7 @@ class coreStocks(stockDB, accessStrings):
         try:
             ten_q_balance = self.get10KQReport(symbol, 'bs', 3)
 
-            if isinstance(ten_q_balance, pd.DataFrame): # an error downloading info for a new stock or simply initializing the db
+            if isinstance(ten_q_balance, pd.DataFrame): # if error downloading info for a new stock or simply initializing the db
                 ten_q_balance = self.format10KQSheet(ten_q_balance, symbol, 'bs')
 
             return ten_q_balance
@@ -914,23 +892,13 @@ class coreStocks(stockDB, accessStrings):
         try:   
             ten_q_cashflow = self.get10KQReport(symbol, 'cf', 3)
 
-            if isinstance(ten_q_cashflow, pd.DataFrame): # an error downloading info for a new stock or simply initializing the db
+            if isinstance(ten_q_cashflow, pd.DataFrame): # if error downloading info for a new stock or simply initializing the db
                 ten_q_cashflow = self.format10KQSheet(ten_q_cashflow, symbol, 'cf')
 
             return ten_q_cashflow
             
         except Exception as e:
             return False, e
-
-    # getUnique10KQItems - not currently needed...remove for public migration
-    def getUnique10KQItems(reports):
-        """
-        Query all DB tables for all symbols' 10K/10Q report line items, 
-        merge the columns and return all unique values.
-        From there I can create a set of functions that utilizes this key.
-        
-        """
-        pass
 
     # createSymbolsKeyTable
     # ********************* # 
@@ -946,7 +914,7 @@ class coreStocks(stockDB, accessStrings):
         """
         try: # create the key symbols table
             assert isinstance(symbols, pd.DataFrame), "Requires a Dataframe as argument. Got %r instead." % type(symbols)   
-            # eventually to add logic to query DB and select any new stocks that aren't already in DB and append new frame to DB
+        
             if self.symbolTableExists() == True:
                 raise ValueError("The Symbols key table already exists. Move along.")
             symbols.to_sql('AllStocksKey', con=self.dbcnx[0], if_exists='replace', index=False)
@@ -954,68 +922,6 @@ class coreStocks(stockDB, accessStrings):
 
         except Exception as e:
             return (False, e)
-
-    # getSandPAllocation
-    # ****************** #
-
-    ## REMOVE for public migration
-
-    def getSandPAllocation(self):
-        """
-        Get S&P 500 Index Long-Term Position Allocations: Morningstar
-        Calls to Morningstar website and get SPX long position asset allocations. Returns a dataframe to commit to DB.
-        Should this be tracked over time, or just deleted and replaced? The long positions shouldn't change that much.
-
-        Example Usage: snp = getSandPAllocation()
-        """
-        try:
-            # get the raw html from the site
-            snp_url = 'http://portfolios.morningstar.com/fund/index-summary?t=SPX'
-            raw_html = requests.get(snp_url).text
-            # create the soup
-            soup = bsoup(raw_html, 'lxml').find('table', id='sector_we_tab') 
-            # get rid of colgroup
-            soup.colgroup.decompose()
-            # get rid of emtpy thead
-            soup.thead.decompose()
-            for row in soup.find_all('tr', class_='hr'):
-                row.decompose()
-            # clean out empty rows
-            for row in soup.find_all('tr', class_='height_divider'):
-                row.decompose()
-            # clean out decorative rows
-            for row in soup.find_all('tr', class_='fontsize_10'):
-                row.decompose()
-            # remove the last row
-            soup.find_all('tr')[-1].decompose()
-            # extract all rows and re-form table so pandas can accept it
-            tbl_rows = [] 
-            # convert all html to strings
-            for row in soup.find_all('tr'):
-                tbl_rows.append(str(row))
-            # make a single string for all rows
-            tbl_rows = ''.join(tbl_rows)
-            # table tags
-            tbl_head, tbl_tail = '<table>', '</table>'
-            # join the table
-            clean_tbl = tbl_head + ''.join(str(tbl_rows)) + tbl_tail
-            # create the dataframe
-            SandP = pd.read_html(clean_tbl, encoding='utf-8')
-            # select only the last two rows of the frame to ignore the false index
-            SnP_alloc = SandP[0].loc[:,1:2]
-            # rename the columns for easier reference
-            SnP_alloc.rename(columns={1:'Sector', 2: 'Percentage'}, inplace=True)
-            # convert Percentage column to a decimal percentage and round
-            SnP_alloc['Percentage'] = SnP_alloc['Percentage'].apply(lambda x: x/100).round(3)
-            # set the index for easier DB maintainence
-            SnP_alloc.set_index('Sector', inplace=True)
-            # remove spaces in columns for sqlite3 compatability
-            SnP_alloc = self.removeColumnSpaces(SnP_alloc)
-
-            return SnP_alloc
-        
-        except Exception as e:
-            return False, e
 
 
     # DB LOGIC & MGT
@@ -1037,14 +943,12 @@ class coreStocks(stockDB, accessStrings):
         Example Usage: commitPriceHistory(data)
         """
         
-        # for monthly update, only commit the history that's not in the DB
-        
         try:
             # pass on get[Recent]MngStarPrice error messages and failures to get price histories
             if data[0] is False:
                 return data
 
-            # need to break, or at least just return a 'no value' msg, not raise value error. 
+            # if 'no value' msg received
             if isinstance(data, str): 
                 if 'No' in data: 
                     return False, data
@@ -1054,11 +958,11 @@ class coreStocks(stockDB, accessStrings):
                 if isinstance(data, tuple) and 'You already have the latest' in data[1]:
                     return data
 
-            # catch if there is no known error but a dataframe didn't get passed.
+            # catch if there is no known error but a dataframe didn't get passed
             if not isinstance(data, pd.DataFrame):
                 return 'Requires a pandas dataframe. Got a {instance}.'.format(instance=type(data))
 
-            # if this is a completely new entry, make sure it's new.
+            # if this is a completely new entry, make sure it's new
             if daily is False:
                 # check if the stock symbol is already present
                 if self.priceHistoryExists(data.index[0]) == True:
@@ -1094,13 +998,13 @@ class coreStocks(stockDB, accessStrings):
         Example Usage: commitDividendHistory(dataframe)
         '''
         try: 
-            # need to break, or at least just return a 'no value' msg, not raise value error. 
+            # if 'no value' msg recieved
             if isinstance(data, str): 
                 if 'No dividend' in data: 
                     return False, data 
 
             if monthly is False:
-                # check if the stock symbol is already present
+                # check if stock symbol is already present
                 if self.dividendHistoryExists(data.index[0]) is True:
                     return 'Stock is already present. Use monthly=True flag with this method to update the DB, or delete the existing record.'
 
@@ -1110,7 +1014,7 @@ class coreStocks(stockDB, accessStrings):
         except Exception as e:
             return (False, e)
             
-    # commitStockFinancials - all commits must be updated with a daily flag
+    # commitStockFinancials
     # ********************* # 
     def commitStockFinancials(self, financial_reports):
         """
@@ -1132,11 +1036,9 @@ class coreStocks(stockDB, accessStrings):
         try: 
             # check if the stock symbol is already present
             if isinstance(financial_reports, str): # financial_reports is a string if this condition is true
-                if 'No available' in financial_reports: # need a function to store these for later update once the stock has been in the markets long enugh to have a history
-                    return False, financial_reports # just return the message
+                if 'No available' in financial_reports:
+                    return False, financial_reports
                 else: return 'Stock financial ratios already comitted. Move along.'
-            
-            # assert check if it's a dataframe 
 
             # add new columns, if needed
             self.checkAndAddDBColumns(financial_reports[0].columns,'FinancialRatios')
@@ -1144,7 +1046,6 @@ class coreStocks(stockDB, accessStrings):
             self.checkAndAddDBColumns(financial_reports[2].columns,'GrowthRatios')
 
             # otherwise, a dataframe is passed back
-            # shouldn't these be replaced? The numbers will change from month to month. I don't need old numbers. 
             financial_reports[0].to_sql('FinancialRatios', con=self.dbcnx[0], if_exists='append')
             financial_reports[1].to_sql('FinHealthRatios', con=self.dbcnx[0], if_exists='append')
             financial_reports[2].to_sql('GrowthRatios', con=self.dbcnx[0], if_exists='append')
@@ -1174,18 +1075,16 @@ class coreStocks(stockDB, accessStrings):
 
         """
         try:    
-            # catch if there's a string that says "no history", etc. Needs to come first to avoid indexing error
+            # catch if there's a string that says "no history", etc. must come first to avoid indexing error
             if isinstance(report, str): # financial_reports is a string if this condition is true
-                if 'No' in report: # need a function to store these for later update once the stock has been in the markets long enugh to have a history
-                    return False, report # just return the message
+                if 'No' in report:
+                    return False, report
             
             if not isinstance(report, pd.DataFrame): # no errors retreiving data
                 # pass an error back to the calling function
                 raise ValueError("Got wrong data type to commit to DB. Report was a %r" % type(report))
 
-            # check if this is a quarterly update
-            
-            # see if the stock symbol is already there and raise an error if so.
+            # see if the stock symbol exists and raise an error if so.
             if self.financialHistoryExists(report.index[0], report_type, report_period) is True: # must specify if true
                raise ValueError('Error: There\'s already a record matching this one. Try using commitIndividualFinancials() method to update the financial info instead.')            
 
@@ -1193,17 +1092,15 @@ class coreStocks(stockDB, accessStrings):
             if report_type == 'is':
                 if report_period == 3: 
 
-                    # to fix: column name changes 
-
                     # add columns if needed
-                    # this is going to give me problems in the future...must have consistent naming of columns
+                    # known issues in this code...must have consistent naming of columns
                     self.checkAndAddDBColumns(report.columns,'TenQIncome')
-                    report.to_sql('TenQIncome', con=self.dbcnx[0], if_exists='append') # insert values into DB using ?? operators                
+                    report.to_sql('TenQIncome', con=self.dbcnx[0], if_exists='append')
                     return True, 'Successfully commited TenQIncome report to the DB.'
                     # clean_df_db_dups()
                 elif report_period == 12: # report goes into annuals
                     self.checkAndAddDBColumns(report.columns,'TenKIncome')
-                    report.to_sql('TenKIncome', con=self.dbcnx[0], if_exists='append') # insert values into DB using ?? operators                
+                    report.to_sql('TenKIncome', con=self.dbcnx[0], if_exists='append')
                     return True, 'Successfully commited TenKIncome report to the DB.'
                 else: # catch formatting error  
                     raise ValueError('Wrong report period of {pd} offered. Try again.'.format(pd=report_period))                
@@ -1211,11 +1108,11 @@ class coreStocks(stockDB, accessStrings):
             elif report_type == 'bs':
                 if report_period == 3:
                     self.checkAndAddDBColumns(report.columns,'TenQBalance')
-                    report.to_sql('TenQBalance', con=self.dbcnx[0], if_exists='append') # insert values into DB using ?? operators                
+                    report.to_sql('TenQBalance', con=self.dbcnx[0], if_exists='append')
                     return True, 'Successfully commited TenQBalance report to the DB.'
                 elif report_period ==12: 
                     self.checkAndAddDBColumns(report.columns,'TenKBalance')
-                    report.to_sql('TenKBalance', con=self.dbcnx[0], if_exists='append') # insert values into DB using ?? operators                
+                    report.to_sql('TenKBalance', con=self.dbcnx[0], if_exists='append')
                     return True, 'Successfully commited TenKBalance report to the DB.'
                 else: 
                     raise ValueError('Wrong report period of {pd} offered. Try again.'.format(pd=report_period))
@@ -1223,55 +1120,18 @@ class coreStocks(stockDB, accessStrings):
             elif report_type == 'cf':
                 if report_period == 3:
                     self.checkAndAddDBColumns(report.columns,'TenQCashflow')
-                    report.to_sql('TenQCashflow', con=self.dbcnx[0], if_exists='append') # insert values into DB using ?? operators                
+                    report.to_sql('TenQCashflow', con=self.dbcnx[0], if_exists='append')
                     return True, 'Successfully commited TenQCashflow report to the DB.'
                 elif report_period ==12:
                     self.checkAndAddDBColumns(report.columns,'TenKCashflow')
-                    report.to_sql('TenKCashflow', con=self.dbcnx[0], if_exists='append') # insert values into DB using ?? operators                
+                    report.to_sql('TenKCashflow', con=self.dbcnx[0], if_exists='append')
                     return True, 'Successfully commited TenKCashflow report to the DB.'
                 else: 
                     raise ValueError('Wrong report period of {pd} offered. Try again.'.format(pd=report_period))
             
-            else: # there was a formatting error in function call. raise exception
+            else: # there was a formatting error in function call
                 raise ValueError("Formatting error in function call. Check your variables {rep_type} and {rep_period}".format(rep_type=report_type, rep_period=report_period))
                                 
-        except Exception as e:
-            return False, e
-
-
-        ## Check Existence
-
-    # commitSandP
-    # *********** # 
-
-    ## REMOVE for public migration
-
-    def commitSandP(self, data, update=False):
-        """
-        Sends the S&P allocation to the DB.
-
-        Data argument is the PANDAS frame result of getSandPAllocation().
-
-        Example Usage: commitSandP( getSandPAllocation() ) 
-        """
-        try:
-
-            # catch if there's a string that says "no history", etc
-            if isinstance(data, str):
-                if 'No' in data: 
-                    return False, data 
-
-            # check if the stock symbol is already present
-            if self.SandPExists() is True and update is False:
-                raise ValueError("S&P 500 allocation table already available. Delete the table if you want to add a new one.")
-
-            # check if new columns added
-            # self.checkAndAddDBColumns(data.columns,'SandPAllocation')
-            
-            # send to DB
-            data.to_sql('SandPAllocation', con=self.dbcnx[0], if_exists='replace')
-            return (True, 'Successfully commited S&P long position allocations to the DB.')
-        
         except Exception as e:
             return False, e
 
@@ -1300,7 +1160,7 @@ class coreStocks(stockDB, accessStrings):
                 elif report_period == 12:
                     table = 'TenKIncome'
                 else: 
-                    raise ValueError('Incorrect period of {rpt_pd} requested. Try again.'.format(rpt_pd = report_period)) # wrong period specified. Throw and error.        
+                    raise ValueError('Incorrect period of {rpt_pd} requested. Try again.'.format(rpt_pd = report_period)) # wrong period specified
             elif report_type == 'bs':
                 if report_period == 3:
                     table = 'TenQBalance'
@@ -1316,7 +1176,7 @@ class coreStocks(stockDB, accessStrings):
                 else: 
                     raise ValueError('Incorrect period {rpt_pd} requested. Try again.'.format(rpt_pd = report_period))
             else:
-                raise ValueError('A report type {rpt} was requested that does not match any you offer. Try again.'.format(rpt = report_type))  # unknown report type..throw an error 
+                raise ValueError('A report type {rpt} was requested that does not match any you offer. Try again.'.format(rpt = report_type))  # unknown report type
             # search the DB for the data
             query = 'SELECT * FROM {tbl} WHERE Symbol = ?'.format(tbl = table)
             if self.dbcnx[1].execute(query, (symbol,)).fetchone() is not None:
@@ -1345,7 +1205,7 @@ class coreStocks(stockDB, accessStrings):
 
         """
         try:
-            # in future, add double check to make sure this symbol is even in the symbol list...faster lookup probably.
+            # double check to make sure this symbol is in symbol list
             if self.dbcnx[1].execute('SELECT * FROM TenYrPrices WHERE Symbol = ?', (symbol,)).fetchone() is not None:
                 return True
             #otherwise return false
@@ -1373,7 +1233,7 @@ class coreStocks(stockDB, accessStrings):
         """
 
         try:
-            # in future, add double check to make sure this symbol is even in the symbol list...faster lookup probably.
+            # double check to make sure this symbol in symbol list
             if self.dbcnx[1].execute('SELECT * FROM Dividends WHERE Symbol = ?', (symbol,)).fetchone() is not None:
                 return True
             # otherwise return false
@@ -1398,10 +1258,10 @@ class coreStocks(stockDB, accessStrings):
         """
 
         try:
-            # if true, return True
+            
             if self.dbcnx[1].execute('SELECT * FROM FinancialRatios WHERE Symbol = ? LIMIT 1', (symbol,)).fetchone() is not None:
                 return (True, 'The {stock} already has a record.'.format(stock=symbol))
-            #otherwise return False
+            
             return (False, 'No records found for {stock}.'.format(stock=symbol))
         except Exception as e:
             return (False, e)
@@ -1434,31 +1294,12 @@ class coreStocks(stockDB, accessStrings):
         Returns True if no errors. Otherwise, returns False with an error message.
         """
         try:
-            # check if the symbol exists in the db. Can remove this same functionality from the methods to be called below.
+            # check if the symbol exists in the db
             db_symbol = self.dbcnx[1].execute('SELECT * FROM AllStocksKey WHERE Symbol = ? LIMIT 1', (symbol,)).fetchone()
             
             if db_symbol[0] != symbol: # issue a warning
                 raise ValueError('The stock symbol provided, {sym}, was not found in the database. Try again.'.format(sym=symbol[0] ))    
             return True
 
-        except Exception as e:
-            return False, e
-
-    # SandPExists
-    # *********** # 
-
-    ## REMOVE for public migration
-
-    def SandPExists(self):
-        """
-        Checks if the S&P allocation table exists in the DB.
-
-        Returns True if table exists, otherwise False. If an error is registered, returns tuple (False, error)
-        """
-        try:
-            if self.dbcnx[1].execute('SELECT 1 FROM sqlite_master WHERE type="table" AND name="SandPAllocation";').fetchone() is not None:
-                return True
-            return False 
-        
         except Exception as e:
             return False, e

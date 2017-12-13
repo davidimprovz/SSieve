@@ -1,4 +1,4 @@
-# daily_stock_routines
+# encapsulates daily_stock_routines
 
 ## PACKAGES Import 
 import sys, os
@@ -11,14 +11,11 @@ import numpy as np
 import pandas as pd
 import pandas.io.sql as pdsql
 
-# from selenium import webdriver # see if proper import resolves this dependency
-# from selenium.common.exceptions import NoSuchElementException # does proper import resolve this dependency?
-# from yahoo_finance import Share as yf # backup in case morningstar doesn't work. to do: add redundancy to data sources
-
 ## CUSTOM Modules
 from core import coreStocks
 
-class dailyStocks(coreStocks): # do i want to extend all functionality, or simply instantiate a core class inside of daily and use as needed?
+
+class dailyStocks(coreStocks):
     """
     Extends core functionality of stock data scraping by managing 
     the update of an existing DB of stocks traded on the NYSE and NASDAQ.
@@ -30,8 +27,6 @@ class dailyStocks(coreStocks): # do i want to extend all functionality, or simpl
     # dailyTimeDelayPriceUpdate()
     # *************************** #
     def dailyTimeDelayPriceUpdate(self, stocks): 
-        # this could potentially take a few flags for monthly and quarterly update. 
-        # but probably best to keep that functionality separate to make it easier to manage code base.
         """
         Helper function which implements a simple random timer to iteratively udpate all stocks in the database.
 
@@ -56,10 +51,8 @@ class dailyStocks(coreStocks): # do i want to extend all functionality, or simpl
         try:     
             assert isinstance(stocks, pd.DataFrame), "dailyTimeDelayPriceUpdate accepts a pandas DataFrame argument. Got %r instead." % type(stocks)
             assert stocks.columns.size is 2, "The stocks dataframe for dailyTimeDelayPriceUpdate should only have two columns. Got %r instead." % stocks.columns.size
-
-            # move check on trading day status to head of populate call 
+ 
             results = []
-
             # set start time for diagnostics
             results.append( 'Start time: ' + datetime.datetime.now().strftime("%Y:%B:%d:%I:%M:%S") + '\n')
             
@@ -67,8 +60,7 @@ class dailyStocks(coreStocks): # do i want to extend all functionality, or simpl
             for stock in stocks.iterrows():
                 wait_time = np.random.randint(4,10) # prevent slamming of servers with requests
                 time.sleep(wait_time)
-                print('Getting recent price history for {sym} - '.format(sym = stock[1][0]) + datetime.datetime.now().strftime("%I:%M:%S") + '\n') # print a helper message to console to show progress                
-                # use getRecentMngStarPriceInfo to only commit new records
+                print('Getting recent price history for {sym} - '.format(sym = stock[1][0]) + datetime.datetime.now().strftime("%I:%M:%S") + '\n') # print message to console to show progress
                 results.append(self.commitPriceHistory(self.getRecentMngStarPriceInfo( (stock[1][0], stock[1][1]) ), daily=True))
             
             # set end time for diagnostics
@@ -102,13 +94,12 @@ class dailyStocks(coreStocks): # do i want to extend all functionality, or simpl
             for i in np.arange(100): # set the number high enough to catch all pages
                 page = str(i+1)
                 full_path = ''.join([path, page])
-                symbol_changes = pd.read_html(full_path, header=0)[3] # index could change in future if html is restructured
+                symbol_changes = pd.read_html(full_path, header=0)[3] # note: index could change in future if html is restructured
                 # concat all of the changes together
                 if 'No records found.' not in symbol_changes.iloc[0][0]:
                     ticker_changes = pd.concat([ticker_changes, symbol_changes], ignore_index=True)
                 else: break # drop out of loop if there's nothing left to capture
 
-            # placeholder: as needed, clean up special chars
             ticker_changes.rename(columns={'Old Symbol': 'Old', 'New Symbol': 'New', 'Effective Date': 'Date'}, inplace=True)
 
             # check returned value
@@ -142,8 +133,6 @@ class dailyStocks(coreStocks): # do i want to extend all functionality, or simpl
             changes = changed_tickers.where(changed_tickers['Old'].isin(old_db_stocks['Symbol'])).dropna() # discard NANs
             # lookup for all DB tables while removing nested tuples
             db_tables = [i[0] for i in self.dbcnx[1].execute('SELECT name FROM sqlite_master WHERE type="table";').fetchall()]
-            # remove the snp sector allocation table
-            db_tables.remove('SandPAllocation')
             
             # loop through DB tables and replace the old symbol with the new.
             success = [] # append a success message 
@@ -153,9 +142,7 @@ class dailyStocks(coreStocks): # do i want to extend all functionality, or simpl
                                     .format(tbl = table, new = new_tick, old = old_tick))
                     # set a flag to check for successful operation
                     success.append('Updated {old} with {new} in {tbl} table'.format(old=old_tick, new=new_tick, tbl=table))
-            
-            # redo: simplify messaging and return values by removing "updated" using an if.
-
+        
             # check to make sure all messages were a success
             if len(success) and  all( ['Updated' in msg for msg in success ] ):
                 return True, success
@@ -167,7 +154,7 @@ class dailyStocks(coreStocks): # do i want to extend all functionality, or simpl
 
     
     # updateAllStocksKey
-    # 
+    # ****************** #
     def updateAllStocksTable(self, new_stocks):
         """
         Receives a pandas DataFrame with two columns: new stock tickers and exchange. 
@@ -206,11 +193,6 @@ class dailyStocks(coreStocks): # do i want to extend all functionality, or simpl
         except Exception as e:
             return False, e
 
-
-    # to do...clean DB of old stocks that are no longer traded. Find them by checking 
-    # for out of date price histories and getting the most recent dates that are older 
-    # that a pre-set period of time, say 14 days.
-
     # getRecentMngStarPriceInfo
     # ************************* # 
     def getRecentMngStarPriceInfo(self, stock):
@@ -231,7 +213,8 @@ class dailyStocks(coreStocks): # do i want to extend all functionality, or simpl
             # just get 10yr price history and use PANDAS to sort out dates you don't have yet.
             price_history = self.createPriceHistoryReport(stock)
 
-            # some stock symbols are funds and what not, and they won't have price histories to update. skip these.
+            # some stock symbols are funds and as such won't have price histories to update. skip these.
+            
             # do nothing if the data returned is empty. Probably means a network issue or some old stock made it past my filter, or was recently suspended, and needs to be removed manually.
             if not isinstance(price_history, pd.DataFrame) or price_history.index.size == 0: # index condition may never be true with a symbol column
                 return 'No price history available for {symbol}'.format(symbol=stock[0])
@@ -243,15 +226,15 @@ class dailyStocks(coreStocks): # do i want to extend all functionality, or simpl
             price_history['Reference'] = pd.to_datetime(price_history['Reference']) # convert dates here. Why? See comment on csv call.
             price_history.sort_values(['Reference'], ascending=False, inplace=True)
             
-            # # filter out old dates
-            mask = ( (price_history['Reference'] > last_date.iloc[0][0]) ) # & (price_history['Reference'] <= pd.to_datetime(today)) date range: +1 day since last update until today. use global "today" variable 
+            # filter out old dates
+            mask = ( (price_history['Reference'] > last_date.iloc[0][0]) )
             price_history = price_history.loc[mask]
 
             # convert dates back to ISO formatted yyyy-mm-dd strings
             price_history['Reference'] = price_history['Reference'].dt.strftime('%Y-%m-%d')
             
-            # # check for empty dataframe
-            if price_history.index.size is 0: # this should never happen at this point, but you never know.
+            # check for empty dataframe
+            if price_history.index.size is 0: # this should never happen at this point, but just to be sure.
                 return False, 'You already have the latest pricing info or there was an unlikely error.'
 
             return price_history
@@ -298,180 +281,8 @@ class dailyStocks(coreStocks): # do i want to extend all functionality, or simpl
             new_stocks = new_stocks[mask]
             old_stocks = old_stocks[mask]
             removed_stocks = removed_stocks[mask]
-            
-            # what if the new stocks and removed stocks are empty? 
-
+        
             return old_stocks, new_stocks, removed_stocks
         
         except Exception as e: 
-            return False, e   
-
-
-    ## UNUSED ## Delete for migration to github
-
-    # getYahooPriceInfo - redundancy in case MngStar does not work. Not finished.
-    @staticmethod
-    def getYahooPriceInfo(symbols):
-        """
-        Collects historical stock pricing info from Yahoo. 
-        This function is a backup if getMngStarPriceInfo() does not 
-        work, or if it returns a network error. 
-
-        Takes a single argument of dataframe 
-        Returns a dict of stock pricing info.
-        """
-        try: 
-            # set up a dict to hold all the data
-            yahoo_stock_info = {
-                                'Symbol':[], #use a dict to initialize all values, which will be passed into a pandas dataframe
-                                'Open': [],
-                                'High':[], 
-                                'Low':[], 
-                                'Close':[],
-                                'Volume':[],
-                                }
-                
-            # YAHOO: if all conditions successful, get the symbol's data
-            for key in symbols['Symbol'].iloc[0:1000]: # remove slice later to get all stocks and push them into DB.
-
-                # checkTradingDay()
-                wait_time = random.random() #np.random.randint(.1,.25)
-                time.sleep(wait_time) # to avoid network 101 unavailable errs
-
-                yahoo_stock_info['Symbol'].append(key)
-                yahoo_stock_info['Open'].append( yf(key).get_open() )
-                yahoo_stock_info['High'].append( yf(key).get_days_high() )
-                yahoo_stock_info['Low'].append( yf(key).get_days_low() )
-                yahoo_stock_info['Close'].append( yf(key).get_price() )
-                yahoo_stock_info['Volume'].append( yf(key).get_volume() )
-
-            # convert data to dataframe
-            yahoo_stock_info = pd.DataFrame(yahoo_stock_info)
-            # reindex the dataframe
-            yahoo_stock_info = yahoo_stock_info.reindex_axis(['Symbol','Open','High','Low','Close','Volume'], axis=1)
-            # convert all prices to floats
-            columns = ['Open', 'High', 'Low', 'Close'] 
-            yahoo_stock_info[columns] = yahoo_stock_info[columns].astype(float)
-            # convert volume to int
-            yahoo_stock_info['Volume'] = yahoo_stock_info['Volume'].astype(int)
-            # add a date column 
-            yahoo_stock_info['Reference'] = pd.to_datetime(datetime.date.today())
-
-            return yahoo_stock_info
-
-        except Exception as e:
-            return (False, e)
-
-    # checkTradingDay
-    # *************** #
-
-    @staticmethod
-    def checkTradingDay(today = datetime.date.today()):
-        """
-        Helper function checks if today's date is a valid day to get pricing info from the markets. 
-        Unnecessary function that will be removed in future versions. 
-
-        You can simply run price updates on any day using getRecentMngStarPriceInfo() which uses 
-        PANDAS date filtering from the DB's previous date to today to avoid unnecessary computation.
-        
-        Accepts a datetime.date object. If none provided, defaults to today().
-
-        Returns either True if today is a valid day, otherwise False
-        """
-        try:
-            # set dates for comparison
-            # yesterday_query = dbmgt.dbcnx[1].execute("SELECT Reference FROM TenYrPrices ORDER BY DATE(Reference) DESC LIMIT 1;").fetchone() # if one date is valid, all dates shold be.
-            # yesterday = datetime.datetime.strptime(yesterday_query[0], '%Y-%m-%d %H:%M:%S').date()
-            
-            day = today.isoweekday()
-
-            # check today is not a Sunday day
-            if day > 5: #see if the update has already been made today by checking the date
-                if day == 6: 
-                    # if yesterday.isoweekday() < 5 ... Friday has not been added yet
-                    return True, 'Today is a Saturday. Starting download for Friday\'s market.'
-                    # else: return False, 'Today is a weekend and last Friday's market has already been added. See you next trading day.'  
-                else:
-                    return False, 'Stocks not updated on Sundays. See you next trading day.'
-            
-            # check the weekday is not a trading holiday
-            elif today in holidays.US():
-                return False, 'Today is a US holiday. Stocks not updated. See you next trading day.'
-
-            else: # Today is trading day
-                return True, '{date} is a trading day. Starting download for today\'s market.'.format(date= str(today))
-
-        except Exception as e:
-            return (False, e)
-
-    # checkTradingTime()
-    # ****************** # 
-    @staticmethod
-    def checkTradingTimeEnded(right_now = datetime.datetime.now(tz=pytz.timezone('America/New_York'))):
-        """
-        Unnecessary function to be removed. Simply use getRecentMngStarPriceInfo()
-        instead, which uses PANDAS filtering to get the previous date up to most 
-        recent history. 
-
-        Checks to make sure that the current US EST is b/t 8:30p to 4a the next day
-        to make sure all market data (NY and Chicago) will be available. 
-        
-        NASDAQ operating hours 4a (premarket) to 8P (aftermarket)
-        NYSE operating hours 9:30a to 4pm
-        
-        Daemon will only execute one time per day, or attempt 3 other tries if there's a fault such as 
-        a network connection issue. Daemon will attempt to update @8:30p EST or later (if there's an 
-        issue updating on the first try).
-        
-        Takes a datetime.date argument of the current datetime. If none provided, defaults to today()
-
-        Returns True if trading has ended and data available. Otherwise returns a tuple of False, error message.
-        """
-        try:
-            
-            # create the UTC
-            # UTC_TZ = pytz.utc
-            EASTERN_TZ = pytz.timezone('America/New_York')
-            
-            # clarify the date for the prices.
-            if right_now.hour <= 1: # subtract one day from date
-                right_now -= datetime.timedelta(days=1)
-                
-            # create the 19:30 UTC time stamp for market closing
-            closing = datetime.datetime.combine(datetime.date.today(), datetime.time(19, 30, tzinfo=EASTERN_TZ))
-            
-            if right_now.hour >= closing.hour or right_now.hour <= 2: # anytime b/t the safe limits of 8:59p and 2:59a
-                return True, 'Ready to download the {daily} trading day stock prices.'.format(daily = str(right_now.date()))
-            else:
-                return False, 'It\'s not time to update the {today} stock price. Try again b/t 9p to 2:59a US EST.'.format(today=str(right_now.date()))
-
-        except Exception as e:
-            return False, e
-
-    # updateStockPrices()
-    # ******************* # 
-    def checkUpdateStatus(self):
-        """
-        Handles the logic for determining the update status of the stock db's price 
-        history. This function will only work at the end of the trading day between 
-        the hours of 5p and 6:59a the next morning.
-
-        Function will be eliminated as it is unnecessary. getRecentMngStarPriceInfo()
-        updates to current day all the dates I don't have using PANDAS filtering.
-
-        Returns True if stock prices can be updated, otherwise False and error message.
-        """
-        try:
-            # make sure the markets are closed
-            day_status = self.checkTradingDay()
-            time_status = self.checkTradingTimeEnded()  
-            
-            if day_status[0] is False:
-                return day_status
-            elif time_status[0] is False:
-                return time_status
-            # all clear
-            return time_status
-        
-        except Exception as e:
             return False, e

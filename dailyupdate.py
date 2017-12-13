@@ -62,7 +62,7 @@ def doDailyUpdate(directory, db_name):
 		# STEP 2: get and test the current NASDAQ downloaded stock list. 
 
 		# first get the current list of stocks
-		exchanges = ['NASDAQ', 'NYSE'] # eventually to be set programatically
+		exchanges = ['NASDAQ', 'NYSE']
 		# test stock list instance type and contents
 		stock_list = dailys.getAllCurStocks(exchanges)
 
@@ -91,16 +91,14 @@ def doDailyUpdate(directory, db_name):
 		comparisons = dailys.compareStockListsWithIsIn(db_stocks, stock_list)
 		# get the new prices for each stock and keep track of the results of the acquisition
 		price_hist_results = dailys.dailyTimeDelayPriceUpdate(comparisons[0])
-		# assert all('Successfully' in i[1] for i in results[1:-1]), "Some price histories failed: %r" % results[1:-1]
-
+    
 
 		
 		# STEP 5: update the DB AllStocksKey table with any new tickers using compareStockListsWithIsIn results.
 
 		# report success updateAllStocksTable
 		all_stocks_update = dailys.updateAllStocksTable(comparisons[1])
-		# assert all_stocks_update[0] not False,  '\n' + 'AllStocksKey was not updated. Got msg: %r' % all_stocks_update[1]
-
+    
 
 
 		# STEP 6: timeDelayPopulate new stocks
@@ -142,7 +140,7 @@ if __name__ == '__main__':
 		# make sure a DB folder in directory if doesn't already exist
 		if os.path.exists(sys.argv[1]) is False:
 			raise ValueError('An invalid directory name was passed to daily update function. Check for errors in %r' % sys.argv[1])
-		# check to make sure cmd line arg has proper format
+		# check to make db name passed has proper format
 		if '.db' not in sys.argv[2]:
 			raise ValueError('No db connection passed with script. Try again.')
 		# initialize the db

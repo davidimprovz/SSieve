@@ -1,6 +1,6 @@
 # daily_tests.py
 
-# Exercises the methods of the coreStocks class
+# Exercise the methods of the coreStocks class
 # each time a change is made to the code base.
 
 import os, sys, re, pprint, time, datetime, holidays
@@ -18,9 +18,6 @@ from bs4 import BeautifulSoup as bsoup
 
 import daily
 
-
-# todo: for clairty, make coreClassTests a multithreaded class with methods 
-# that print their results and invoke from main function.
 
 def dailyStocksTests():
 	"""
@@ -42,7 +39,6 @@ def dailyStocksTests():
 
 		# STEP 1: instantiate class, set variables, connect to DB instance. 
 
-		# test_db = os.getcwd() + '/db/daily_function_tests.db' # for testing w/o data
 		test_db = os.getcwd() + '/db/daily_tests_dummy.db' # for testing w/ data
 		exchanges = ('NASDAQ', 'NYSE')
 
@@ -73,15 +69,6 @@ def dailyStocksTests():
 		assert all(i in stock_list.columns for i in sl_expected_cols), "NASDAQ stock list columns don't match: got %r" % stock_list.columns
 
 
-		# OLD...do not use
-		# connect to a test DB with data in it to change tickers and add new stocks
-		# test_connection = ''.join([os.getcwd(), '/db/','daily_tests_dummy.db'])
-		# test_db_cnx = sqlite3.connect(test_connection)
-		# test_db_cur = test_db_cnx.cursor() 
-		# assert isinstance(test_db_cnx, sqlite3.Connection), "Cnx failed to dummy db for tests."
-		# assert isinstance(test_db_cur, sqlite3.Cursor), "Cur failed to dummby db for tests."
-
-
 
 		# STEP 3: rename tickers in the DB as needed using renameStocks.
 
@@ -99,10 +86,10 @@ def dailyStocksTests():
 
 
 
-
 		# STEP 4: update price history for all unchanged stocks.
 
-		old_stocks = pd.read_sql('SELECT * FROM "AllStocksKey";', con=update_stocks.dbcnx[0]) # query dummy DB for old stocks
+        # query dummy DB for old stocks if one exists
+		old_stocks = pd.read_sql('SELECT * FROM "AllStocksKey";', con=update_stocks.dbcnx[0])
 		assert isinstance(old_stocks, pd.DataFrame), "The stock list retrieved from the DB was empty."
 
 		# get references to old, new and removed stocks
@@ -139,12 +126,6 @@ def dailyStocksTests():
 		test_retrieve =  pd.read_sql('SELECT * FROM TenYrPrices WHERE Symbol = "{sym}" ORDER BY date(Reference) DESC Limit 1;'.format(sym=random_stock.iloc[0][0]), con=update_stocks.dbcnx[0])
 		assert isinstance(test_retrieve, pd.DataFrame), "Updated price history from DB not a dataframe: returned %r" % type(test_retrieve)
 		assert test_retrieve.index.size > 0, "Updated price history from DB is empty."
-		# # test_date = pd.to_datetime(test_retrieve['Reference'][0])
-		
-		# today = pd.datetime.today() # won't work if a weekend. 
-		# # subtract 1 day to get yesterday, which is the most current date in db
-		# assert test_date.month == today.month and test_date.day == today.day-1, "The latest price history date does not match today's date. Got %r instead." % test_date
-		
 
 		# test dailyTimeDelayPriceUpdate for an old stock picked at random
 		random_stocks = comparisons[0].sample(2)
@@ -153,15 +134,10 @@ def dailyStocksTests():
 		
 		
 
-
-		# to do: set daily update of stock financial reports
-		
-
-
 		# STEP 5: update the DB AllStocksKey table with any new tickers using compareStockListsWithIsIn.
 
 		# now update the AllStocksKey db table
-		new_stocks = comparisons[1] # shouldn't be any new if test is run 2x.
+        new_stocks = comparisons[1] # note: shouldn't be any new if test is run 2x.
 
 		all_stocks_update = update_stocks.updateAllStocksTable(new_stocks)
 		assert isinstance(all_stocks_update, tuple), "updateAllStocksTable returned an unexpected type. Got %r" % type(all_stocks_update)
@@ -183,14 +159,11 @@ def dailyStocksTests():
 
 		# STEP 7: close the DB to commit all changes.
 		
-		# test_db_cnx.commit() # turn off if using dummy data db
-		# test_db_cnx.close() # turn off if using dummy data db
 
-		print('\n' + str(update_stocks.closeDBConnection(update_stocks.dbcnx[0]))) # test db
-			# todo: test if dbconnection closed
+		print('\n' + str(update_stocks.closeDBConnection(update_stocks.dbcnx[0])))
 		
 		# delete db if not using dummy data DB 
-		# os.remove(test_db)
+        os.remove(test_db) # comment out to turn off for data you want to keep
 
 		return 'Tests completed. No errors to report.'
 

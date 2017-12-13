@@ -1,12 +1,9 @@
 # strings for accessing data sources 
 
 class accessStrings():
-	
-	# def __init__(self): # placeholder
-	# 	break
-	
-	# TO DO: edit to have leading underscore...then edit core.py to reflect 
-	# changes to names using self.
+	"""
+    Properties for accessing stock data URLs
+    """
 
 	# NASDAQ URL formula for collecting all current exchange data in CSV format
 	all_cur_stocks_csv_base_url = 'http://www.nasdaq.com/screening/companies-by-name.aspx?letter=0&exchange='

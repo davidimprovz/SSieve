@@ -35,8 +35,6 @@ def coreClassTests():
 		nyse_symbol = ('DUK','NYSE')
 		nasdaq_symbol = ('MSFT', 'NASDAQ')
 
-		# make a DB folder in this directory if doesn't already exist
-
 		# instantiate coreStocks class, connect to db, and test
 		new_stocks = core.coreStocks(test_db)
 		new_stocks.connectToDB(new_stocks.dbcnx)
@@ -64,7 +62,6 @@ def coreClassTests():
 
 
 		# test raw price history report
-			# todo: test price history path for valid html address
 		price_report = new_stocks.get10YrPriceHistory(nyse_symbol)
 		pr_expected_cols = ['Date', 'Open', 'High', 'Low', 'Close', 'Volume']
 		assert isinstance(price_report, pd.DataFrame), "Raw price history report not a dataframe: returned %r" % type(price_report)
@@ -81,8 +78,6 @@ def coreClassTests():
 		assert len(pr_hist_report.columns) == len(pr_hist_cols), "Formatted price history report missing columns: got %r" % len(pr_hist_report.columns)
 		assert all(i in pr_hist_report.columns for i in pr_hist_cols), "Formatted price history report columns don't match: got %r" % pr_hist_report.columns
 
-			# todo: priceHistoryExists(symbol)
-
 		
 		# test dividend history
 		div_hist = new_stocks.getDividendHistory(nasdaq_symbol, 10)
@@ -91,19 +86,14 @@ def coreClassTests():
 		assert div_hist.index.size > 1, "Dividend report was empty."
 		assert len(div_hist.columns) == len(div_hist_cols), "Dividend report missing columns: got %r" % len(div_hist.columns)
 		assert all(i in div_hist.columns for i in div_hist_cols), "Dividend report columns don't match: got %r" % div_hist.columns
-			
-			# todo: formatRawDivTable(table) 
-			# todo: dividendHistoryExists(symbol)
 
 
-		# test raw stock financial reports 
-			# todo: test stock_financials path for valid html address
+		# test raw stock financial reports
 		fin_report = new_stocks.getStockFinancials(nyse_symbol)
-			# todo: test cols using time to calculate the appropriate cols
 		assert isinstance(fin_report, pd.DataFrame), "Raw financials report not a dataframe: returned %r" % type(fin_report)
 		assert fin_report.index.size > 1, "Raw financials report was empty."
-			# assert len(fin_report.columns) == len(fin_report_cols)
-			# assert all(i in fin_report.columns for i in fin_report_cols)
+        # assert len(fin_report.columns) == len(fin_report_cols)
+        # assert all(i in fin_report.columns for i in fin_report_cols)
 
 
 		# test finished financial report 
@@ -112,108 +102,90 @@ def coreClassTests():
 		assert all(isinstance(i, pd.DataFrame) for i in financials), "Formatted financials reports not dataframes: returned %r" % [type(i) for i in financials]
 		assert all(i.index.size > 1 for i in financials), "One or more formatted financial reports were empty: %r." % [i.index.size for i in financials]
 
-			# todo: financialHistoryExists(report, report_type, period)
-			# todo: checkStockFinancialsExist(symbol)
-
-
 		# test raw 10K/Q reports
 		raw_tk_inc = new_stocks.get10KQReport(nasdaq_symbol, 'is', 12)
-			# todo: use time to get test column names
 		assert isinstance(raw_tk_inc, pd.DataFrame), "Raw 10k inc report not a dataframe: returned %r" % type(raw_tk_inc)
 		assert raw_tk_inc.index.size > 1, "Raw 10k inc report was empty."
-			# assert len(div_hist.columns) == len(div_hist_cols)
-			# assert all(i in div_hist.columns for i in div_hist_cols)
+        # assert len(div_hist.columns) == len(div_hist_cols)
+        # assert all(i in div_hist.columns for i in div_hist_cols)
 			
 		raw_tk_bs = new_stocks.get10KQReport(nasdaq_symbol, 'bs', 12)
-			# todo: use time to get test column names
 		assert isinstance(raw_tk_bs, pd.DataFrame), "Raw 10k bs report not a dataframe: returned %r" % type(raw_tk_bs)
 		assert raw_tk_bs.index.size > 1, "Raw 10k bs report was empty."
-			# assert len(div_hist.columns) == len(div_hist_cols)
-			# assert all(i in div_hist.columns for i in div_hist_cols)
+        # assert len(div_hist.columns) == len(div_hist_cols)
+        # assert all(i in div_hist.columns for i in div_hist_cols)
 
 		raw_tk_cf = new_stocks.get10KQReport(nasdaq_symbol, 'cf', 12)
-			# todo: use time to get test column names
 		assert isinstance(raw_tk_cf, pd.DataFrame), "Raw 10k cf report not a dataframe: returned %r" % type(raw_tk_cf)
 		assert raw_tk_cf.index.size > 1, "Raw 10k cf report was empty."
-			# assert len(div_hist.columns) == len(div_hist_cols)
-			# assert all(i in div_hist.columns for i in div_hist_cols)
+        # assert len(div_hist.columns) == len(div_hist_cols)
+        # assert all(i in div_hist.columns for i in div_hist_cols)
 
 		raw_tq_inc = new_stocks.get10KQReport(nasdaq_symbol, 'is', 3)
-			# todo: use time to get test column names
 		assert isinstance(raw_tq_inc, pd.DataFrame), "Raw 10q inc report not a dataframe: returned %r" % type(raw_tq_inc)
 		assert raw_tq_inc.index.size > 1, "Raw 10q inc report was empty."
-			# assert len(div_hist.columns) == len(div_hist_cols)
-			# assert all(i in div_hist.columns for i in div_hist_cols)
+        # assert len(div_hist.columns) == len(div_hist_cols)
+        # assert all(i in div_hist.columns for i in div_hist_cols)
 
 		raw_tq_bs = new_stocks.get10KQReport(nasdaq_symbol, 'bs', 3)
-			# todo: use time to get test column names
 		assert isinstance(raw_tq_bs, pd.DataFrame), "Raw 10q bs report not a dataframe: returned %r" % type(raw_tq_bs)
 		assert raw_tq_bs.index.size > 1, "Raw 10q bs report was empty."
-			# assert len(div_hist.columns) == len(div_hist_cols)
-			# assert all(i in div_hist.columns for i in div_hist_cols)
+        # assert len(div_hist.columns) == len(div_hist_cols)
+        # assert all(i in div_hist.columns for i in div_hist_cols)
 
 		raw_tq_cf = new_stocks.get10KQReport(nasdaq_symbol, 'cf', 3)
-			# todo: use time to get test column names
 		assert isinstance(raw_tq_cf, pd.DataFrame), "Raw 10q cf report not a dataframe: returned %r" % type(raw_tq_cf)
 		assert raw_tq_cf.index.size > 1, "Raw 10q cf report was empty."
-			# assert len(div_hist.columns) == len(div_hist_cols)
-			# assert all(i in div_hist.columns for i in div_hist_cols)
-
-			# todo: test format10KQSheet(sheet, symbol, sheet_type)
+        # assert len(div_hist.columns) == len(div_hist_cols)
+        # assert all(i in div_hist.columns for i in div_hist_cols)
 
 
 		# test finished 10K income statement 
 		k_inc_report = new_stocks.create10KIncomeReport(nyse_symbol)
-			# todo: use time to get test column names
 		assert isinstance(k_inc_report, pd.DataFrame), "Formatted 10k inc report not a dataframe: returned %r" % type(k_inc_report)
 		assert k_inc_report.index.size > 1, "Formatted 10k inc report was empty."
-			# assert len(k_inc_report.columns) == len(k_inc_cols)
-			# assert all(i in k_inc_report.columns for i in k_inc_cols)
+        # assert len(k_inc_report.columns) == len(k_inc_cols)
+        # assert all(i in k_inc_report.columns for i in k_inc_cols)
 
 
 		# test finished 10K balance sheet
 		k_bs_report = new_stocks.create10KBalanceReport(nyse_symbol)
-			# todo: use time to get test column names
 		assert isinstance(k_bs_report, pd.DataFrame), "Formatted 10k bs report not a dataframe: returned %r" % type(k_bs_report)
 		assert k_bs_report.index.size > 1, "Formatted 10k bs report was empty."
-			# assert len(k_inc_report.columns) == len(k_inc_cols)
-			# assert all(i in k_inc_report.columns for i in k_inc_cols)
+        # assert len(k_inc_report.columns) == len(k_inc_cols)
+        # assert all(i in k_inc_report.columns for i in k_inc_cols)
 
 
 		# test finished 10K cashflow sheet 
 		k_cf_report = new_stocks.create10KCashflowReport(nyse_symbol)
-			# todo: use time to get test column names
 		assert isinstance(k_cf_report, pd.DataFrame), "Formatted 10k cf report not a dataframe: returned %r" % type(k_cf_report)
 		assert k_cf_report.index.size > 1, "Formatted 10k cf report was empty."
-			# assert len(k_inc_report.columns) == len(k_inc_cols)
-			# assert all(i in k_inc_report.columns for i in k_inc_cols)
+        # assert len(k_inc_report.columns) == len(k_inc_cols)
+        # assert all(i in k_inc_report.columns for i in k_inc_cols)
 
 
 		# test finished 10Q income sheet 
 		q_inc_report = new_stocks.create10QIncomeReport(nyse_symbol)
-			# todo: use time to get test column names
 		assert isinstance(q_inc_report, pd.DataFrame), "Formatted 10q inc report not a dataframe: returned %r" % type(q_inc_report)
 		assert q_inc_report.index.size > 1, "Formatted 10q inc report was empty."
-			# assert len(k_inc_report.columns) == len(k_inc_cols)
-			# assert all(i in k_inc_report.columns for i in k_inc_cols)
+        # assert len(k_inc_report.columns) == len(k_inc_cols)
+        # assert all(i in k_inc_report.columns for i in k_inc_cols)
 
 
 		# test finished 10q balance sheet 
 		q_bs_report = new_stocks.create10QBalanceReport(nyse_symbol)
-			# todo: use time to get test column names
 		assert isinstance(q_bs_report, pd.DataFrame), "Formatted 10q bs report not a dataframe: returned %r" % type(q_bs_report)
 		assert q_bs_report.index.size > 1, "Formatted 10q bs report was empty."
-			# assert len(k_inc_report.columns) == len(k_inc_cols)
-			# assert all(i in k_inc_report.columns for i in k_inc_cols)
+        # assert len(k_inc_report.columns) == len(k_inc_cols)
+        # assert all(i in k_inc_report.columns for i in k_inc_cols)
 
 
 		# test finished 10q cashflow sheet 
 		q_cf_report = new_stocks.create10QCashflowReport(nyse_symbol)
-			# todo: use time to get test column names
 		assert isinstance(q_cf_report, pd.DataFrame), "Formatted 10q cf report not a dataframe: returned %r" % type(q_cf_report)
 		assert q_cf_report.index.size > 1, "Formatted 10q cf report was empty."
-			# assert len(k_inc_report.columns) == len(k_inc_cols)
-			# assert all(i in k_inc_report.columns for i in k_inc_cols)
+        # assert len(k_inc_report.columns) == len(k_inc_cols)
+        # assert all(i in k_inc_report.columns for i in k_inc_cols)
 
 
 		# test commit of price history and query DB for the table 
@@ -223,8 +195,6 @@ def coreClassTests():
 		test_retrieve =  pd.read_sql('SELECT * FROM TenYrPrices WHERE Symbol = "{item}";'.format(item=nyse_symbol[0]), con=new_stocks.dbcnx[0])
 		assert isinstance(test_retrieve, pd.DataFrame), "Price history from DB not a dataframe: returned %r" % type(test_retrieve)
 		assert test_retrieve.index.size > 1, "Price history from DB is empty."
-
-			# todo: check priceHistoryExists() 
 
 
 		# test commit of dividend history
@@ -297,17 +267,6 @@ def coreClassTests():
 		assert q_cf_retrieve.index.size > 1, "Ten Q cf from DB is empty." 
 
 
-		# test snp allocation
-		snp_alloc = new_stocks.getSandPAllocation()
-		assert isinstance(snp_alloc, pd.DataFrame), "Failed to get snp allocation. Got a %r instead." % type(snp_alloc[1])
-		assert snp_alloc.index.size > 1, "The snp allocation returned empty."
-		snp_commit = new_stocks.commitSandP(snp_alloc)
-		assert snp_commit[0] is True, "Failed to commit snp allocation to the db with return of %r." % snp_commit[1]
-		snp_retrieve = pd.read_sql('SELECT * FROM SandPAllocation;', con=new_stocks.dbcnx[0])
-		assert isinstance(snp_retrieve, pd.DataFrame), "Failed to retrieve snp allocation from database."
-		assert snp_retrieve.index.size > 1, "The retrieved snp allocation in db was empty." 
-
-
 		# test populateAllFinancialReportsForStock for a stock picked at random
 		stock_list = stock_list[['Symbol', 'Market']]
 		new_stocks.dropAllTables() # clear the DB
@@ -328,7 +287,7 @@ def coreClassTests():
 
 		# test tear down of db connection 
 		print('\n' + str(new_stocks.closeDBConnection(new_stocks.dbcnx[0])))
-			# todo: test if dbconnection closed
+
 
 		# delete db
 		os.remove(test_db)

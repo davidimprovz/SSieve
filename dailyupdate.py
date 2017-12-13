@@ -48,7 +48,7 @@ def doDailyUpdate(directory, db_name):
 		# STEP 1: SET VARIABLES AND CONNECT TO DB
 		
 		# instantiate dailyStocks class and connect to db
-		db_path = directory + db_name
+		db_path = ''.join([directory, db_name])
 		dailys = daily.dailyStocks(db_path)
 		# connect to DB
 		dailys.connectToDB(dailys.dbcnx)
@@ -79,7 +79,7 @@ def doDailyUpdate(directory, db_name):
 			assert( all( ['Updated' in msg for msg in changes_made[1]] ) ), "All stock name changes were reported good but did not process properly."
 		elif changes_made[0] is False:
 			if 'Nothing to update' in changes_made[1]:
-				print(changes_made)
+				print(changes_made[1])
 
 		
 
@@ -114,17 +114,41 @@ def doDailyUpdate(directory, db_name):
 
 		# log all results....to do - set programatically
 		log = '/home/dev/AUTOSIFT/ez_equity_daemon/scraping/output/daily/results_' + datetime.date.today().strftime("%B_%d_%Y") + '.txt'  # use ''.join([]) constructor
-		with open(log, 'w') as f:
-			f.write('\n\n-----NAME CHANGES-----\n\n')
-			f.write(changes_made)
-			f.write('\n\n-----PRICE HISTORY-----\n\n')
-			f.write(price_hist_results)
-			f.write('\n\n-----ALL STOCKS KEY-----\n\n')
-			f.write(all_stocks_update)
-			f.write('\n\n-----NEW STOCKS-----\n\n')
-			f.write(new_additions)
-			f.write('\n\n----------\n\n')
-		f.close()
+            with open(log, 'w') as f:
+            
+                f.write('\n\n----- NAME CHANGES -----\n\n')
+                
+                for i in changes_made:
+                    
+                    f.write(str(i))
+                    
+                    f.write('\n')
+
+                f.write('\n\n----- PRICE HISTORY -----\n\n')
+
+                for elem in price_hist_results:
+                    f.write(str(elem[0]))
+                    for i in elem[1:-1]:
+                        f.write(str(i))
+                        f.write('\n')
+                    f.write(str(elem[-1]))
+
+                f.write('\n\n----- ALL STOCKS KEY -----\n\n')
+                for i in all_stocks_update:
+                    f.write(str(i))
+                    f.write('\n')
+
+                f.write('\n\n----- NEW STOCKS -----\n\n')
+
+                for elem in new_additions:
+                    f.write(str(elem[0]))
+                    for i in elem[1:-1]:
+                        f.write(str(i))
+                        f.write('\n')
+                    f.write(str(elem[-1]))
+
+                f.write('\n\n----- END -----\n\n')
+            f.close()
 
 		return True, 'Finished daily updates. Check log file for results at %r' % log
 		

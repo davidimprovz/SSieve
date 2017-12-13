@@ -139,12 +139,9 @@ class stockDB():
 	    Trying to write an earlier date col to an existing table will result in an err.
 
 	    This function is used in the data gather chain and called from commit* functions.
-	    It checks columns in the table being written to. If the report you're trying to generate
-	    has new columns that have not been inserted into the table yet, this function will 
-	    insert those column names. Where there are gaps, a column is added. 
-
-	    Accepts the dataframe column names of the dataframe you're trying to save to the db, 
-	    as well as the table you're trying to save to. 
+	    It checks columns in the table being written to. If the report you're trying to save has new columns that have not been inserted into the table yet, this function will insert those column names. Where there are gaps, a column is added.
+        
+        Accepts the dataframe column names of the dataframe you're trying to save to the db, as well as the table you're trying to save to.
 
 	    Returns True, added_columns if successful. Otherwise, returns False and error.
 	    """

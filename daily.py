@@ -147,7 +147,7 @@ class dailyStocks(coreStocks):
             if len(success) and  all( ['Updated' in msg for msg in success ] ):
                 return True, success
             else:
-                return False, 'Nothing to update, or an error occured.', success
+                return False, 'No ticker changes to make, or an error occured.', success
 
         except Exception as e:
             return False, e
@@ -208,7 +208,7 @@ class dailyStocks(coreStocks):
         try:
             record = pd.read_sql('SELECT DISTINCT Symbol FROM TenYrPrices WHERE Symbol="{sym}";'.format(sym=stock[0]), con=self.dbcnx[0])
             if record.empty:
-                raise ValueError('%r is not in the price history database yet. Check to make sure stock symbol is correct or make call to getMngStarPriceInfo.' % stock)            
+                return '%r is not in the price history database yet. Check to make sure stock symbol is correct or make call to getMngStarPriceInfo.' % stock            
 
             # just get 10yr price history and use PANDAS to sort out dates you don't have yet.
             price_history = self.createPriceHistoryReport(stock)

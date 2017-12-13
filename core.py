@@ -120,7 +120,8 @@ class coreStocks(stockDB, accessStrings):
         try: 
             
             assert isinstance(stocks, pd.DataFrame), "timeDelayDataPopulate expected a dataframe argument. Got %r" % type(stocks)
-            assert stocks.index.size > 0, "An empty dataframe was passed to timeDelayDataPopulate. No new stocks to get."
+            if stocks.index.size is 0:
+                return "Empty dataframe passed to timeDelayDataPopulate. No new stocks to get."
 
             results = [] # collect results for log
 
@@ -944,14 +945,13 @@ class coreStocks(stockDB, accessStrings):
         """
         
         try:
+            # return a 'no value' msg, not raise value error.
+            if isinstance(data, str) and 'No' in data:
+                return False, data
+            
             # pass on get[Recent]MngStarPrice error messages and failures to get price histories
-            if data[0] is False:
+            if isinstance(data, tuple) and data[0] is False: # the only condition that can occure from getMngStarPrice...
                 return data
-
-            # if 'no value' msg received
-            if isinstance(data, str): 
-                if 'No' in data: 
-                    return False, data
 
             # catch the case where daily update returns no new information
             if daily is True: 

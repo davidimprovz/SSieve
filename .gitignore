@@ -1,3 +1,5 @@
+.gitignore 
+
 # Compiled source #
 ###################
 *.com
@@ -60,5 +62,5 @@ Thumbs.db
 /analyzing/analysis_logic_ideas
 /analyzing/Versions
 
-/eperiments
+/experiments
 

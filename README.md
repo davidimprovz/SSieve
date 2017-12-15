@@ -7,7 +7,7 @@ You may use this software freely in your work by clearly and conspicuously ackno
 
 ## Overview
 
-WallstreetDB.py is a stock market data project using (mostly) PANDAS that allows its user to create a lightweight and robust stock exchange Sqlite3 database (DB). Think of this as a starter pack that you can expand on. It (mostly) collects the latest 5-year history of stock exchange data for all stocks listed on the NASDAQ and NYSE. Data sources are mostly made up of common info hubs. Check the globalvars.py module for more details. Since this software is expected to change over time, you can expect more sources.
+SSieve is a stock market data project using (mostly) PANDAS that allows its user to create a lightweight and robust stock exchange Sqlite3 database (DB). Think of this as a starter pack that you can expand on. It (mostly) collects the latest 5-year history of stock exchange data for all stocks listed on the NASDAQ and NYSE. Data sources are mostly made up of common info hubs. Check the globalvars.py module for more details. Since this software is expected to change over time, you can expect more sources.
 
 The resulting DB serves as a reference for testing algorithms on one's own system without the hassle or vulnerability of 3rd party services or poorly-maintained APIs.
 

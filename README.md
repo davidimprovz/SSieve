@@ -1,7 +1,7 @@
 # SSieve
 Wallstreet data. A python tool for gathering, analyzing, and visualizing information on equity markets and individual equities.
 
-©2017 David Williams. Creative Commons License applies.
+©2017 David Williams.
 You may use this software freely in your work by clearly and conspicuously acknowledging its author in the copyright of your software with the name of the author as well as this link to the original software on github.
 
 

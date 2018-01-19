@@ -30,7 +30,7 @@
 *.sql
 *.sqlite
 *.csv
-# *.db
+*.db
 
 
 # OS generated files #

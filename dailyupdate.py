@@ -104,7 +104,6 @@ def doDailyUpdate(directory, db_name):
 		# STEP 6: timeDelayPopulate new stocks
 	
 		# finally, add a newly reported stock to the DB	
-		new_additions = dailys.timeDelayDataPopulate(comparisons[1])	
 		
 
 		# STEP 7: close db, commit changes, and log results
@@ -113,42 +112,6 @@ def doDailyUpdate(directory, db_name):
 		dailys.closeDBConnection(dailys.dbcnx[0])
 
 		# log all results....to do - set programatically
-		log = '/home/dev/AUTOSIFT/ez_equity_daemon/scraping/output/daily/results_' + datetime.date.today().strftime("%B_%d_%Y") + '.txt'  # use ''.join([]) constructor
-            with open(log, 'w') as f:
-            
-                f.write('\n\n----- NAME CHANGES -----\n\n')
-                
-                for i in changes_made:
-                    
-                    f.write(str(i))
-                    
-                    f.write('\n')
-
-                f.write('\n\n----- PRICE HISTORY -----\n\n')
-
-                for elem in price_hist_results:
-                    f.write(str(elem[0]))
-                    for i in elem[1:-1]:
-                        f.write(str(i))
-                        f.write('\n')
-                    f.write(str(elem[-1]))
-
-                f.write('\n\n----- ALL STOCKS KEY -----\n\n')
-                for i in all_stocks_update:
-                    f.write(str(i))
-                    f.write('\n')
-
-                f.write('\n\n----- NEW STOCKS -----\n\n')
-
-                for elem in new_additions:
-                    f.write(str(elem[0]))
-                    for i in elem[1:-1]:
-                        f.write(str(i))
-                        f.write('\n')
-                    f.write(str(elem[-1]))
-
-                f.write('\n\n----- END -----\n\n')
-            f.close()
 
 		return True, 'Finished daily updates. Check log file for results at %r' % log
 		

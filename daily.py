@@ -74,42 +74,6 @@ class dailyStocks(coreStocks):
 
     ## OLD STOCKS
 
-    # checkStockNameChanges()
-    # *********************** #
-    @staticmethod
-    def checkStockNameChanges():
-        """
-        Handles the renaming of stocks in the DB that have been renamed. It will switch 
-        both the name and the symbol for every table in the database. 
-
-        Uses PANDAS to capture html tables from the NASDAQ listings containing symbol changes. 
-
-        Returns the changes in a PANDAS frame, if any. If problem scraping NASDAQ, returns error msg.
-        If code error, returns a tuple of False, error.
-        """
-        try:
-
-            path = 'http://www.nasdaq.com/markets/stocks/symbol-change-history.aspx?page='
-            ticker_changes = pd.DataFrame()
-            for i in np.arange(100): # set the number high enough to catch all pages
-                page = str(i+1)
-                full_path = ''.join([path, page])
-                symbol_changes = pd.read_html(full_path, header=0)[3] # note: index could change in future if html is restructured
-                # concat all of the changes together
-                if 'No records found.' not in symbol_changes.iloc[0][0]:
-                    ticker_changes = pd.concat([ticker_changes, symbol_changes], ignore_index=True)
-                else: break # drop out of loop if there's nothing left to capture
-
-            ticker_changes.rename(columns={'Old Symbol': 'Old', 'New Symbol': 'New', 'Effective Date': 'Date'}, inplace=True)
-
-            # check returned value
-            assert isinstance(ticker_changes, pd.DataFrame), "Expected stock name changes to return pandas DataFrame. Got %r instead" % type(tickers)
-
-            return ticker_changes
-
-        except Exception as e:
-            return False, e
-
     # renameStocks()
     # ************** # 
     def renameStocks(self, changed_tickers):

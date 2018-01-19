@@ -47,7 +47,7 @@ def initializeStockDB(db_name):
 		all_stocks.createSymbolsKeyTable(stock_list)
 
 		# populate all of the stocks
-		results = all_stocks.timeDelayDataPopulate(stock_list.iloc[1345:1450])
+            # available in full software
 
 		# log the results as a file
 		log = ''.join([cwd, '/output/initialize/init_results_', datetime.date.today().strftime("%B_%d_%Y"), '.txt'])

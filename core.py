@@ -57,13 +57,12 @@ class coreStocks(stockDB, accessStrings):
                 cols.pop(-1)
                 # reindex
                 sheet = sheet.reindex(columns=cols)
-
-                return sheet
             else: 
                 raise ValueError( 'Variable with incorrect data type passed. A dataframe is required but a {kind} was passed'.format(kind=type(sheet)) )
-        
         except Exception as e:
             return False, e
+
+        return sheet
 
     # cleanNullColumns
     # **************** #
@@ -84,117 +83,6 @@ class coreStocks(stockDB, accessStrings):
         
         except Exception as e:
             return False, e
-
-    @staticmethod
-    def removeColumnSpaces(sheet):
-        """
-        Format a column name to remove spaces.
-
-        Takes dataframe as argument.
-
-        Returns pandas dataframe with edited column names (where applicable)
-        """
-
-        return sheet.rename(columns=lambda x: x.replace(' ', '_'))
-
-    # timeDelayDataPopulate
-    def timeDelayDataPopulate(self, stocks):
-        """
-        Helper function...implements a simple random timer to iteratively process all stocks into the database.
-
-        This function controls all other functions to gather and process reports for all stocks 
-        on the NYSE and NASDAQ. It selects all stock tickers from the database and iterates over 
-        them using a random timer for each iteration to avoid slamming servers that provide the stock 
-        data. It calls populateAllFinancialReportsForStock() on each iteration. Timer is set to 
-        between 4-10 seconds and has been tested successfully. The drawback is that there are >5000 
-        stocks to iterate over. So once you invoke this function, be prepared to work on another project 
-        for some time. 
-
-        Accepts stocks argument, which is a dataframe of stocks to iterate over. This dataframe should have
-        the columns 'Symbol' and 'Exchange', although a series of just 'Symbol' would also work.
-
-        Returns the return value of populateAllFinancialReportsForStock().
-
-        Example Usage: timeDelayDataPopulate()
-        """
-        try: 
-            
-            assert isinstance(stocks, pd.DataFrame), "timeDelayDataPopulate expected a dataframe argument. Got %r" % type(stocks)
-            if stocks.index.size is 0:
-                return "Empty dataframe passed to timeDelayDataPopulate. No new stocks to get."
-
-            results = [] # collect results for log
-
-            # set start time for diagnostics
-            results.append( 'Start time: ' + datetime.datetime.now().strftime("%Y:%B:%d:%I:%M:%S") + '\n')
-            
-            # loop over stock symbols and get data for each. Use timer to avoid server throttle.    
-            
-            for stock in stocks.iterrows():
-                wait_time = np.random.randint(4,10)
-                time.sleep(wait_time)
-                print('Gathering data on {sym} - '.format(sym = stock[1][0]) + datetime.datetime.now().strftime("%I:%M:%S") + '\n') # print a helper message to console to show progress
-                results.append(self.populateAllFinancialReportsForStock(stock[1])) # iterating over rows in series...must select second elem in tuple
-            
-            # acquire the snp allocation for the entire market
-            results.append( self.commitSandP(self.getSandPAllocation(), True) )
-            # set end time for diagnostics
-            results.append( 'End time: ' + datetime.datetime.now().strftime("%Y:%B:%d:%I:%M:%S") )
-
-            return results
-
-        except Exception as e: 
-            return False, e
-
-    # populateAllFinancialReportsForStock
-    def populateAllFinancialReportsForStock(self, stock, daily=False):
-        """
-        A helper function to populate all financial reports for all stocks listed in the DB in a single call.
-
-        Still in development...this function is producing known errors on a few stocks such as SLB, GOOG.
-        Note: This function only works after the initial Symbols table has been created from the NASDAQ. 
-        This function initializes all data for all stock tickers listed in the symbols table in the database. 
-        It processes the reports for that ticker, saving each report to the database. The symbol argument is 
-        a string 'SYMBOL', which is used to complete a simple check on the database to ensure that the symbol 
-        exists in the Symbols table.
-
-        Returns a list of return values (success or failure) from all functions that are run. Otherwise,
-        returns a tuple (False, error message).
-
-        Example Usage: populateAllFinancialReportsForStock(stocks) where stocks is a pandas DataFrame
-        with two columns, 'Symbol' and 'Market'.
-        """
-        try:
-
-            # issue a warning and stop network calls if the symbol doesn't exist
-            if daily is False and self.symbolExists(stock[0]) != True:
-                    raise ValueError( 'The stock symbol passed does not match one in the DB. Update the DB or correct your symbol, %r.' % stock[0] )
-            
-            success_msgs = []                            
-            # add a routine to capture stock symbols that are no longer traded referenced from price history report. 
-            # eliminate the symbol, from future searches and updates (but not from the DB).
-            success_msgs.append('Start data gather for {stock} - '.format(stock=stock[0]) + datetime.datetime.now().strftime("%I:%M:%S") )
-           
-            # get 10yr price history and append result to success_msgs
-            success_msgs.append( self.commitPriceHistory( self.createPriceHistoryReport(stock) ) )
-            # get all 10Ks and append result to success_msgs
-            success_msgs.append( self.commitFinancialsData( self.create10KIncomeReport(stock), 'is', 12) )
-            success_msgs.append( self.commitFinancialsData( self.create10KBalanceReport(stock), 'bs', 12) )
-            success_msgs.append( self.commitFinancialsData( self.create10KCashflowReport(stock), 'cf', 12) )
-            # get all 10Qs and append result to success_msgs
-            success_msgs.append( self.commitFinancialsData( self.create10QIncomeReport(stock), 'is', 3) )
-            success_msgs.append( self.commitFinancialsData( self.create10QBalanceReport(stock), 'bs', 3) )
-            success_msgs.append( self.commitFinancialsData( self.create10QCashflowReport(stock), 'cf', 3) )
-            # get the dividend records, if any, and append result to success_msgs
-            success_msgs.append( self.commitDividendHistory( self.getDividendHistory(stock, '20')) )
-            # get the financials records and append result to success_msgs
-            success_msgs.append( self.commitStockFinancials( self.createStockFinancialsReports(stock) ) )
-            
-            success_msgs.append('End data gather for {stock} - '.format(stock=stock[0]) + datetime.datetime.now().strftime("%I:%M:%S") )
-            return success_msgs
-        
-        except Exception as e:
-            return (False, e)
 
     # makeStockListURL
     # **************** #
@@ -217,7 +105,6 @@ class coreStocks(stockDB, accessStrings):
 
         except Exception as e:
             return False, e
-
 
 
     # REPORTS
@@ -252,7 +139,7 @@ class coreStocks(stockDB, accessStrings):
             # drop the Unnamed and Summary Quote columns
             all_exchanges.drop(['Unnamed: 8', 'Summary Quote'], axis=1, inplace=True)
             #drop all n/a(s) in the LastSale column b/c I don't care about stock that's not selling.
-            all_exchanges = all_exchanges[ (all_exchanges.loc[:,'LastSale'] != 'n/a') & (all_exchanges.loc[:, 'LastSale'] != None) ]
+            all_exchanges = all_exchanges[ (all_exchanges.loc[:, 'LastSale'] != None) ] # (all_exchanges.loc[:,'LastSale'] != 'n/a') & 
             # cast all numeric values in LastSale as float instead of string
             all_exchanges.loc[:, 'LastSale'] = all_exchanges.loc[:,'LastSale'].astype(float)
             #add column for marketcap symbol and remove all symbols and numbers from marketcap that to get the multiplier
@@ -451,73 +338,6 @@ class coreStocks(stockDB, accessStrings):
         except Exception as e:
             return False, e
 
-    # formatRawDivTable
-    # ***************** #
-    @staticmethod
-    def formatRawDivTable(soup, which):
-        """
-        Helper function formats html of upcoming and past dividends into a string that PANDAS can interpret.
-
-        This function will create a properly formatted HTML table as a single string for PANDAS to read. 
-        Beautiful Soup handles the extraction of the necessary info from the raw HTML that it receives from
-        the soup argument. The which argument is a string of either 'upcoming' dividends or 'past'. The 
-        default logic of which is to process past dividends.
-
-        Returns 'no upcoming' to the calling function if there's no dividend data to get. Otherwise, will 
-        return either the formatted html table, or a tuple with (False, error message) in case of error.
-
-        Example Usage: formatRawDivTable(past_soup, 'past')
-        """
-        try:
-
-            if soup is None:
-                return 'No Dividend'
-
-            # make table end caps
-            tbl_head = '<table>'
-            tbl_tail = '</table>'
-                
-            if which == 'upcoming': # the upcoming div table
-                # find the header row and convert to string
-                header = str(soup.select('.gry')[0])
-                # get the item that contains the needed data 
-                contents = soup.find('tbody').contents
-                
-                # check to make sure there's content in the upcoming dividend table, otherwise flag and pass
-                if len(contents) <= 3:
-                    return 'No Upcoming'
-                
-                # different binning for stocks paid semi-annually, annually, and quarterly            
-                data_row = [] # container 
-                for idx, item in enumerate(contents): # get the needed row
-                    if idx == 3: 
-                        data_row = str(item)
-                        pass # end the loop
-                finished_table = tbl_head + header + data_row + tbl_tail # package the table
-            
-            else: # the past history table            
-                # remove all thdr rows b/c they're not needed
-                for row in soup.find_all('tr', class_='thdr'):
-                    row.decompose()
-                # loop over rows and pass them to a new variable to extract tbodys and thead tags
-                all_rows = []
-                for row in soup.find_all('tr'):
-                    all_rows.append(str(row)) # make everything a string so join works
-                # create a boolean check on the past_formatted_table to check for number of <tr> elements
-
-                if len(all_rows) <= 1: 
-                    return 'No Dividend'            
-
-                # join all rows
-                all_rows = ''.join(all_rows)
-                # put table together
-                finished_table = tbl_head + all_rows + tbl_tail
-            
-            return finished_table
-        
-        except Exception as e:
-            return False, e                        
-
     # getStockFinancials
     # ****************** #
     def getStockFinancials(self, symbol):
@@ -552,104 +372,6 @@ class coreStocks(stockDB, accessStrings):
                 return empty_msg
             else:
                 return False, e
-
-    # createStockFinancialsReports
-    # **************************** #
-    def createStockFinancialsReports(self, symbol):
-        '''
-        Gathers and formats the financial ratios for a stock into 3 separate PANDAS dataframes. 
-
-        This function uses getStockFinancials() to acquire key financial ratios for a given stock. 
-        The data fields are broken into three separate reports, each a PANDAS dataframe. The symbol 
-        argument is a tuple with ('SYMBOL', 'EXCHANGE') which accepts any valid ticker symbol and 
-        either 'NYSE' or 'NASDAQ'.
-
-        If the data for a stock is already in the Financials table, the function returns 'already exists'. 
-        Otherwise, returns 3 dataframes in a tuple (financials, growth_ratios, finhealth_ratios), 
-        or an error message in tuple as (False, error message).
-
-        Example Usage: createStockFinancialsReports(('DUK', 'NYSE'))
-        '''
-        try:
-        
-            if self.checkStockFinancialsExist(symbol[0])[0] == False: # func call indexed b/c it returns a tuple
-                # get the raw data and return an err msg if no data available
-                financials = self.getStockFinancials(symbol)
-                if 'No available' in financials:
-                    return financials
-
-                # add Symbol column for tracking and adding to DB
-                financials['Symbol'] = symbol[0]
-
-                # rename one column for clarity
-                financials.rename(columns={'Unnamed: 0': 'Measure'}, inplace=True)
-
-                # realign the columns to put the Symbol first
-                financials = self.alignReportColumns(financials)
-                
-                # remove some unnecessary rows by slicing a view from the original data
-                financials = financials[
-                                        (financials['Measure'] != 'Margins % of Sales') &
-                                        (financials['Measure'] != 'Key Ratios -> Profitability') &
-                                        (financials['Measure'] != 'Profitability') &
-                                        (financials['Measure'] != 'Key Ratios -> Cash Flow') &
-                                        (financials['Measure'] != 'Cash Flow Ratios') & 
-                                        (financials['Measure'] != 'Key Ratios -> Efficiency Ratios') & 
-                                        (financials['Measure'] != 'Efficiency')
-                                        ]
-                
-                # indexes to use for slicing the growth rations 
-                growth_index1 = financials[financials['Measure'] == 'Key Ratios -> Growth'].index
-                growth_index1 = growth_index1[0] # remember: index the tuples
-                growth_index2 = financials[financials['Measure'] == '10-Year Average'].index
-                growth_index2 = growth_index2[-1]
-
-                # indexes to use for slicing the financial health ratios
-                finhealth_index1 = financials[financials['Measure'] == 'Key Ratios -> Financial Health'].index
-                finhealth_index1 = finhealth_index1[0]
-                finhealth_index2 = financials[financials['Measure'] == 'Debt/Equity'].index
-                finhealth_index2 = finhealth_index2[0]
-                
-                # slice out growth ratios that have a different column for quarterly data
-                growth_ratios = financials.ix[growth_index1:growth_index2].copy()
-                # drop the first unwanted row
-                growth_ratios = growth_ratios.iloc[2:].copy()
-                # adjust the column name
-                growth_ratios.rename(columns={'TTM': 'Latest Qtr'}, inplace=True)
-                # set the index to the symbol for easy DB insertion
-                growth_ratios.set_index('Symbol', inplace=True)
-
-                # remove the financial health ratios from the financials frame
-                finhealth_ratios = financials.ix[finhealth_index1: finhealth_index2].copy()
-                # remove first two unneeded rows
-                finhealth_ratios = finhealth_ratios.iloc[2:]
-
-                finhealth_ratios.rename(columns={'TTM': 'Latest Qtr'}, inplace=True)
-                # set the index to the symbol for easy DB insertion
-                finhealth_ratios.set_index('Symbol', inplace=True)      
-                
-                # drop the financial health ratios from the financial frame
-                financials.drop(financials.index[finhealth_index1-5: finhealth_index2-4], inplace=True)
-                
-                # drop the growth ratios from the financials frame
-                financials.drop(financials.index[growth_index1-3 : growth_index2-2], inplace=True)
-                # reset the index on the financials frame
-                financials.set_index('Symbol',inplace=True)
-                # remove spaces in column names for sqlite3 compatability
-                financials = self.removeColumnSpaces(financials)
-
-                # discard any columns with all null values
-                growth_ratios = self.cleanNullColumns(growth_ratios)
-                finhealth_ratios = self.cleanNullColumns(finhealth_ratios)
-                financials = self.cleanNullColumns(financials)
-                
-
-                return (financials, growth_ratios, finhealth_ratios) # three data frames to go into DB 
-
-            return 'already exists'
-            
-        except Exception as e:
-            return False, e
 
     # get10KQReports
     # ************** #
@@ -734,61 +456,6 @@ class coreStocks(stockDB, accessStrings):
         except Exception as e:
             return False, e
 
-    # create10KIncomeReport
-    # ********************* #
-    def create10KIncomeReport(self, symbol):
-        """
-        Create a 10K income statement report for a given stock symbol and return data as a PANDAS dataframe.
-
-        This function requires a symbol argument which is a tuple of a ('SYM', 'EXCHANGE'). Allowed values for the 
-        first part of the tuple are any valid stock symbol. The Exchange must be either NASDAQ or NYSE. 
-        The function uses get10KQReport to generate an income statement packaged in a dataframe. After 
-        retreiving the data, it creates a Symbol field for tracking the data inside the TenKIncome database table.
-        Some cleaning and shortening of field names also takes place. 
-
-        Returns the income repot as a dataframe if successful. Otherwise, returns a tuple (False, Error message).
-
-        Example Usage: create10KIncomeReport(('ULTI', 'NASDAQ'))
-        """
-        try:
-            ten_k_income = self.get10KQReport(symbol, 'is', 12) # note: a slow connection prevents download
-            
-            if isinstance(ten_k_income, pd.DataFrame): # if no error downloading info for a new stock or simply initializing the db            
-                ten_k_income = self.format10KQSheet(ten_k_income, symbol, 'is')
-
-            return ten_k_income
-
-        except Exception as e:
-            return (False, e)
-
-    # create10KBalanceReport
-    # ********************** #
-    def create10KBalanceReport(self, symbol):
-        """
-        Create an annual balance report for the last 5 years for any given stock.
-
-        The function uses get10KQReport() to generate the data and then formats the field names 
-        to shorten them and become relative date ranges instead of absolute ranges. 
-        This function takes a symbol argument that is a tuple of form ('SYMBOL','EXCHANGE'). The symbol is any valid 
-        stock symbol. The exchange must be either 'NYSE' or 'NASDAQ'. 
-
-        Return value, if successful, is the balance sheet packaged in a PANDAS dataframe. Otherwise a tuple of 
-        (False, error message) is returned.
-
-        Example Usage: create10KBalanceReport(('DDD','NASDAQ'))
-        """
-
-        try:
-            ten_k_balance = self.get10KQReport(symbol, 'bs', 12) # note: a slow connection prevents download
-            
-            if isinstance(ten_k_balance, pd.DataFrame): # if no error downloading info for a new stock or simply initializing the db            
-                ten_k_balance = self.format10KQSheet(ten_k_balance, symbol, 'bs')
-
-            return ten_k_balance
-            
-        except Exception as e:
-            return False, e
-
     # create10KCashflowReport
     # *********************** #
     def create10KCashflowReport(self, symbol):
@@ -813,62 +480,6 @@ class coreStocks(stockDB, accessStrings):
                  ten_k_cashflow = self.format10KQSheet(ten_k_cashflow, symbol, 'cf')
 
             return ten_k_cashflow
-            
-        except Exception as e:
-            return False, e
-
-    # create10QIncomeReport
-    # ********************* #
-    def create10QIncomeReport(self, symbol):
-        """
-        Create a 10Q (quarterly) income report for a given stock ticker.
-
-        This function uses get10KQReport() to generate a 10Q quarterly report for the given stock. 
-        Downloaded field names are shortened for readibility. This function takes a symbol argument that 
-        is a tuple of form ('SYMBOL','EXCHANGE'). The symbol is any valid stock symbol. The exchange must be 
-        either 'NYSE' or 'NASDAQ'.
-
-        Return value if successful is the quarterly income report packaged in a PANDAS dataframe. Otherwise
-        will return a tuple (False, error message). 
-
-        Example Usage: create10QIncomeReport(('MMM','NYSE'))
-        """
-
-        try:
-            ten_q_income = self.get10KQReport(symbol, 'is', 3)
-            
-            if isinstance(ten_q_income, pd.DataFrame): # if error downloading info for a new stock or simply initializing the db
-                ten_q_income = self.format10KQSheet(ten_q_income, symbol, 'is')
-                
-            return ten_q_income
-
-        except Exception as e:
-            return False, e
-
-    # create10QBalanceReport
-    # ********************** #
-    def create10QBalanceReport(self, symbol):
-        """
-        Create a 10Q (quarterly) balance sheet for a given ticker.
-
-        This function uses get10KQReport() to generate and clean a quarterly balance sheet report 
-        for a given ticker. The field names in this report are shortened for readiblity. 
-        This function takes a symbol argument that is a tuple of form ('SYMBOL','EXCHANGE'). 
-        The symbol is any valid stock symbol. The exchange must be either 'NYSE' or 'NASDAQ'.
-
-        Return value if successful is the TTM quarterly balance sheet packaged in a PANDAS dataframe. 
-        Otherwise will return a tuple (False, error message). 
-
-        Example Usage: crate10QBalanceReport(('GPRO','NASDAQ'))
-        """
-
-        try:
-            ten_q_balance = self.get10KQReport(symbol, 'bs', 3)
-
-            if isinstance(ten_q_balance, pd.DataFrame): # if error downloading info for a new stock or simply initializing the db
-                ten_q_balance = self.format10KQSheet(ten_q_balance, symbol, 'bs')
-
-            return ten_q_balance
             
         except Exception as e:
             return False, e
@@ -976,82 +587,6 @@ class coreStocks(stockDB, accessStrings):
 
             return (True, 'Successfully commited {stock} price history to the DB.'.format(stock=data.index[0]))    
         
-        except Exception as e:
-            return False, e
-            
-    # commitDividendHistory
-    # ********************* # 
-    def commitDividendHistory(self, data, monthly=False):
-        '''
-        Handles database commitment of dividend history for a stock.
-
-        Not fully finished...this function recieves a pandas dataframe containing a stock's dividend 
-        history and checks the Dividends table to make sure the history doesn't already exist. If it does, 
-        it returns a message "already present." Otherwise, it commits the pandas dataframe to the database. 
-        If you want to add more dividend information to the table for a stock, you will need to write a separate 
-        function to handle that task.
-
-        Returns message "already present" if dividend history exists. If not, it will commit the data
-        to the Dividends table and return a tuple (True, 'success msg'). Any errors will be returned 
-        as a tuple (False, error message)
-
-        Example Usage: commitDividendHistory(dataframe)
-        '''
-        try: 
-            # if 'no value' msg recieved
-            if isinstance(data, str): 
-                if 'No dividend' in data: 
-                    return False, data 
-
-            if monthly is False:
-                # check if stock symbol is already present
-                if self.dividendHistoryExists(data.index[0]) is True:
-                    return 'Stock is already present. Use monthly=True flag with this method to update the DB, or delete the existing record.'
-
-            data.to_sql('Dividends', con=self.dbcnx[0], if_exists='append')
-            return (True, 'Successfully commited stock dividend history to the DB.')
-            
-        except Exception as e:
-            return (False, e)
-            
-    # commitStockFinancials
-    # ********************* # 
-    def commitStockFinancials(self, financial_reports):
-        """
-
-        Saves the financial history dataframes to the db in their respective tables. 
-
-        The financial_reports argument will be the return of createStockFinancialsReports(). 
-        If that function returns 'already exists', commitStockFinancials() will return a message
-        indicating the tables already exist in the DB. Otherwise, this function will 
-        commit the the tuple of 3 dataframe objects to the 3 tables: financial_ratios, 
-        finhealth_ratios, and growth_ratios.
-
-        If successfully committed, the function will return a tuple (True, 'Success message'). 
-        Any errors will be returned as a tuple with (False, error message).
-
-        Example Usage: commitStockFinancials(createStockFinancialsReports(symbol))
-
-        """
-        try: 
-            # check if the stock symbol is already present
-            if isinstance(financial_reports, str): # financial_reports is a string if this condition is true
-                if 'No available' in financial_reports:
-                    return False, financial_reports
-                else: return 'Stock financial ratios already comitted. Move along.'
-
-            # add new columns, if needed
-            self.checkAndAddDBColumns(financial_reports[0].columns,'FinancialRatios')
-            self.checkAndAddDBColumns(financial_reports[1].columns,'FinHealthRatios')
-            self.checkAndAddDBColumns(financial_reports[2].columns,'GrowthRatios')
-
-            # otherwise, a dataframe is passed back
-            financial_reports[0].to_sql('FinancialRatios', con=self.dbcnx[0], if_exists='append')
-            financial_reports[1].to_sql('FinHealthRatios', con=self.dbcnx[0], if_exists='append')
-            financial_reports[2].to_sql('GrowthRatios', con=self.dbcnx[0], if_exists='append')
-            
-            return True, 'Successfully commited {stock} financial ratios to the DB.'.format(stock=financial_reports[0].index[0])
-
         except Exception as e:
             return False, e
 
@@ -1209,59 +744,6 @@ class coreStocks(stockDB, accessStrings):
             if self.dbcnx[1].execute('SELECT * FROM TenYrPrices WHERE Symbol = ?', (symbol,)).fetchone() is not None:
                 return True
             #otherwise return false
-            return (False, 'No records found for {stock}.'.format(stock=symbol))
-        except Exception as e:
-            return (False, e)
-
-    # dividendHistoryExists
-    # ********************* # 
-    def dividendHistoryExists(self, symbol):
-        """
-
-        Checks the Dividends table in the database to see if stock symbol is present.
-
-        This is a gatekeeper function that will look up the Dividends table and find any matching 
-        records of the symbol in the table's symbol field. Function can be used in any other function
-        requing a check on the table before adding more data to Dividends. The symbol argument is 
-        a string of any valid stock ticker, e.g., 'DUK'.
-
-        Returns True if a record for the ticker exists. Returns tuple (False, 'No records') if no 
-        records found. Any errors will be returned in a tuple (False, error message).
-
-        Example Usage: dividendHistoryExists('DUK')
-
-        """
-
-        try:
-            # double check to make sure this symbol in symbol list
-            if self.dbcnx[1].execute('SELECT * FROM Dividends WHERE Symbol = ?', (symbol,)).fetchone() is not None:
-                return True
-            # otherwise return false
-            return (False, 'No records found for {stock}.'.format(stock=symbol))
-        except Exception as e:
-            return (False, e)
-
-    # checkStockFinancialsExist
-    # ************************* # 
-    def checkStockFinancialsExist(self, symbol):
-        """
-
-        Gatekeeper function...checks if stock already has an entry in the financial ratio's table.
-
-        This function looks through the financial_ratios table for the symbol. The symbol argument
-        is a single string of any valid ticker symbol, e.g., 'DUK'. If the symbol is found in the 
-        table, the function returns a tuple with (True, 'Success message'). If fasle, a tuple with 
-        (False, 'No records'). Any errors will be returned in a tuple with (False, error message).
-
-        Example Usage: checkStockFinancialsExist('DUK')
-
-        """
-
-        try:
-            
-            if self.dbcnx[1].execute('SELECT * FROM FinancialRatios WHERE Symbol = ? LIMIT 1', (symbol,)).fetchone() is not None:
-                return (True, 'The {stock} already has a record.'.format(stock=symbol))
-            
             return (False, 'No records found for {stock}.'.format(stock=symbol))
         except Exception as e:
             return (False, e)
